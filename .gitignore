@@ -1,0 +1,6 @@
+ebin/*.beam
+ebin/sasl.app
+erl_crash.dump
+log/*
+start.sh
+src/nodelist.hrl

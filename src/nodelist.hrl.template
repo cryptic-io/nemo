@@ -1,0 +1,6 @@
+%Node list
+-define(NODE_LIST,[
+    'nemo@127.0.0.1'
+]).
+
+
