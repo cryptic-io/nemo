@@ -52,11 +52,9 @@ child_init(L) -> {ok,L,?CHILD_LOOP_TIMEOUT}.
 child_handle_info(timeout,L) ->
 	case gen_tcp:accept(L,60000) of
     {ok, Socket} ->
-        io:fwrite("got connection\n"),
-        gen_tcp:close(Socket);
-	    %Pid = spawn(nconnection,get_sock,[]),
-	    %gen_tcp:controlling_process(Socket,Pid),
-        %Pid!{ohaithar,Socket};
+	    Pid = spawn(nconnection,get_sock,[]),
+	    gen_tcp:controlling_process(Socket,Pid),
+        Pid!{ohaithar,Socket};
     {error,_} -> fuck_em
     end,
     {noreply,L,?CHILD_LOOP_TIMEOUT};
