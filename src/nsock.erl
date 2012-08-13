@@ -15,7 +15,7 @@ gen_json(Sock,Data) ->
 
 error(Sock,Command,Error) ->
     ?MODULE:gen_json(Sock,[{command,Command},{error,Error}]).
-error(Sock,Command,Error,Field) ->
-    ?MODULE:gen_json(Sock,[{command,Command},{error,Error},{field,Field}]).
+error(Sock,Command,Error,Extra) ->
+    ?MODULE:gen_json(Sock,[{command,Command},{error,Error}|Extra]).
 
 close(Sock) -> gen_tcp:close(Sock).

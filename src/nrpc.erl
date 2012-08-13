@@ -19,7 +19,7 @@
 %        Default = term() | required
 %        Return = bool()
 %
-%        Result = StructL | {error, Key, Error}
+%        Result = StructL | {error, Error, [{field,Key}]}
 %        Error = atom()
 
 extract(StructL,MetaList) -> ?MODULE:extract(StructL,MetaList,[]).
@@ -27,7 +27,7 @@ extract({struct,StructL},MetaList,Ret) -> ?MODULE:extract(StructL,MetaList,Ret);
 extract(_,[],Ret) -> Ret;
 extract(StructL,[{Key,MetaData}|MetaList],Ret) ->
     case ?MODULE:process_metadata( nutil:keyfind(Key,StructL), MetaData) of
-    {error,E} -> {error,E,Key};
+    {error,E} -> {error,E,[{field,Key}]};
     {return,Value} -> 
         ?MODULE:extract(StructL,MetaList,[{Key,Value}|Ret]);
     pass -> 

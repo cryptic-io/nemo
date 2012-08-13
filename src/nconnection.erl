@@ -73,9 +73,9 @@ handle_data(Socket,Data,S) ->
         Ret = try mochijson2:decode(Data) of
             {struct,Struct} ->
                 case nrpc:extract(Struct,?COMMAND_EXTRACT) of
-                [{<<"command">>,Command}] ->
-                    io:fwrite("Command is ~s\n",[Command]),
-                    S;
+                [{<<"command">>,Command}] -> 
+                    ?MODULE:command_dispatch(Socket,Struct,S,Command);
+                    %?MODULE:command_downloadFile(Socket,Struct,S);
                 ErrorObj -> ErrorObj
                 end;
             _ -> {error,bad_json}
@@ -86,17 +86,40 @@ handle_data(Socket,Data,S) ->
         %If there were any errors in stuff, send error
         case Ret of
         {error,E} -> nsock:error(Socket,false,E), S;
-        {error,E,Key} -> nsock:error(Socket,false,E,Key), S;
+        {error,E,Extra} -> nsock:error(Socket,false,E,Extra), S;
         _ -> Ret
         end;
 
     _ -> S
 	end.
 
+command_dispatch(Socket,Struct,S,Command) ->
+    Ret = case Command of
+    <<"downloadFile">> ->   ?MODULE:command_downloadFile(Socket,Struct,S);
+    _ ->                    {error, unknown_command}
+    end,
+
+    case Ret of
+    {error,Error} -> nsock:error(Socket,Command,Error);
+    {error,Error,Extra} -> nsock:error(Socket,Command,Error,Extra);
+    NS -> NS
+    end.
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%% Commands
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+-define(DOWNLOADFILE_EXTRACT,[{<<"filename">>,{binary,required,true}}]).
+command_downloadFile(Socket,Struct,S) ->
+    case nrpc:extract(Struct,?DOWNLOADFILE_EXTRACT) of
+    [{<<"filename">>,FileName}] -> 
+        case nfile:pipe_file(Socket,FileName) of
+        {error,E} -> {error,E};
+        {error,E,Ex} -> {error,E,Ex};
+        success -> S
+        end;
+    {error,Error,Extra} -> {error,Error,Extra}
+    end.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Data pulling and processing
