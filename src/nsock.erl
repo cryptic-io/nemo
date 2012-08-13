@@ -15,7 +15,7 @@ gen_json(Sock,Data) ->
 
 success(Sock,Command) -> ?MODULE:success(Sock,Command,ok).
 success(Sock,Command,SuccessMessage) ->
-    ?MODULE:gen_json(Sock,[{success,SuccessMessage},{command,Command}]).
+    ?MODULE:gen_json(Sock,[{command,Command},{success,SuccessMessage}]).
 
 error(Sock,Command,Error) ->
     ?MODULE:gen_json(Sock,[{command,Command},{error,Error}]).

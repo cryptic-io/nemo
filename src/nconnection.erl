@@ -68,7 +68,7 @@ handle_datas(Sock,[Data|Datas],S) ->
 %Handles data that's come in from the tcp socket.
 %Promises to loop back to process_sock_loop
 -define(COMMAND_EXTRACT,[
-                            {<<"meta">>, {struct,required,true}},
+                            {<<"meta">>, {struct,{struct,[]},true}},
                             {<<"command">>,{binary,required,true}}
                         ]).
 -define(META_EXTRACT,[
@@ -94,28 +94,27 @@ handle_data(Socket,Data,S) ->
             _:_ -> {error,bad_json}
         end,
 
-        %If there were any errors in stuff, send error
+        %Handle errors from these steps, once we call cmomand_dispatch it will
+        %handle errors and will always send back a state
         case Ret of
-        {error,E} -> nsock:error(Socket,false,E), S;
-        {error,E,Extra} -> nsock:error(Socket,false,E,Extra), S;
+        {error,E}       ->  ?MODULE:push_data(Socket,[],false, {error,E}),       S;
+        {error,E,Extra} ->  ?MODULE:push_data(Socket,[],false, {error,E,Extra}), S;
         _ -> Ret
         end;
 
     _ -> S
 	end.
 
+%Dispatches the command with given meta and struct. The command function will return
+%the new state for the connection and a tuple which will be sent into push_data.
 command_dispatch(Socket,Struct,Meta,S,Command) ->
-    Ret = case {S#conn_state.sudo,Command} of
-    {true,<<"addFileKey">>} ->  ?MODULE:command_addFileKey(Socket,Struct,Meta,S);
-    {_,<<"downloadFile">>} ->   ?MODULE:command_downloadFile(Socket,Struct,Meta,S);
+    {NS, PushCommand} = case {S#conn_state.sudo,Command} of
+    {true,<<"addFileKey">>} ->  ?MODULE:command_addFileKey(Struct,S);
+    {_,<<"downloadFile">>}  ->  ?MODULE:command_downloadFile(Struct,S);
     _ ->                        {error, unknown_command}
     end,
 
-    NS = case Ret of
-    {error,Error} -> nsock:error(Socket,Command,Error), S;
-    {error,Error,Extra} -> nsock:error(Socket,Command,Error,Extra), S;
-    _ -> Ret
-    end,
+    ?MODULE:push_data(Socket,Meta,Command,PushCommand),
 
     case nutil:keyfind(<<"http">>,Meta) of
     true -> die;
@@ -130,53 +129,58 @@ command_dispatch(Socket,Struct,Meta,S,Command) ->
                                 {<<"filename">>,{binary,required,true}},
                                 {<<"key">>,{binary,required,true}}
                            ]).
-command_addFileKey(Socket,Struct,Meta,S) ->
-    nutil:keyfind(<<"http">>,Meta) andalso 
-        ?MODULE:print_http_headers(Socket,json),
-    case nrpc:extract(Struct,?ADDFILEKEY_EXTRACT) of
+command_addFileKey(Struct,S) ->
+    Ret = case nrpc:extract(Struct,?ADDFILEKEY_EXTRACT) of
     {error,Error,Extra} -> {error,Error,Extra};
     [{_,Key},{_,FileName}] ->
         ndb:add_key(FileName,Key),
-        nsock:success(Socket,<<"addFileKey">>),
-        S
-    end.
+        {success,<<"addFileKey">>}
+    end,
+    {S,Ret}.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 -define(DOWNLOADFILE_EXTRACT,[
                                 {<<"filename">>,{binary,required,true}},
                                 {<<"key">>,{binary,required,true}}
                              ]).
-command_downloadFile(Socket,Struct,Meta,S) ->
-    Http = nutil:keyfind(<<"http">>,Meta),
-    case nrpc:extract(Struct,?DOWNLOADFILE_EXTRACT) of
+command_downloadFile(Struct,S) ->
+    Ret = case nrpc:extract(Struct,?DOWNLOADFILE_EXTRACT) of
     [{_,Key},{_,FileName}] -> 
         case ndb:get_file_for_key(Key) of
         FileName ->
             case nfile:file_size(FileName) of
-            {error,E} -> 
-                Http andalso ?MODULE:print_http_headers(Socket,json),
-                {error,E};
+            {error,E} -> {error,E};
             Size ->
-                Http andalso ?MODULE:print_http_headers(Socket,{binary,Size}),
-                case nfile:pipe_file(Socket,FileName) of
-                {error,E} -> {error,E};
-                {error,E,Ex} -> {error,E,Ex};
-                success -> 
-                    spawn(ndb,delete_key,[Key]), S
-                end
+                spawn(ndb,delete_key,[Key]),
+                {pipe,FileName,Size}
             end;
-        _ -> 
-            Http andalso ?MODULE:print_http_headers(Socket,json),
-            {error,bad_key}
+        _ -> {error,bad_key}
         end;
-    {error,Error,Extra} -> 
-        Http andalso ?MODULE:print_http_headers(Socket,json),
-        {error,Error,Extra}
-    end.
-
+    {error,Error,Extra} -> {error,Error,Extra}
+    end,
+    {S,Ret}.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Data pulling/pushing and processing
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%Pushes data based on the tuple given, and the Meta object given.
+push_data(Sock, Meta, Command, {error,E}) -> ?MODULE:push_data(Sock,Meta,Command,{error,E,[]});
+push_data(Sock, Meta, Command, {error,E,Ex}) ->
+    nutil:keyfind(<<"http">>,Meta) == true andalso ?MODULE:print_http_headers(Sock,json),
+    nsock:error(Sock,Command,E,Ex);
+
+push_data(Sock, Meta, Command, {success, SuccessMessage}) ->
+    nutil:keyfind(<<"http">>,Meta) == true andalso ?MODULE:print_http_headers(Sock,json),
+    nsock:success(Sock,Command,SuccessMessage);
+
+push_data(Sock, Meta,_Command, {pipe, Source, SourceSize}) ->
+    nutil:keyfind(<<"http">>,Meta) == true andalso ?MODULE:print_http_headers(Sock,{binary,SourceSize}),
+    case nfile:pipe_file(Sock,Source) of
+    {error,E} -> ?MODULE:push_data(Sock, [], {error, E});
+    success -> k
+    end.
 
 %Attemps to trim a newline off the raw data and return it.
 %If there is no newline, assumes there is still more data
