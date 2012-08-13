@@ -25,7 +25,7 @@ get_file_for_key(Key) -> ndb:call({getfileforkey,Key}).
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 perform_call({addkey,FileName,Key}) ->
-    mnesia:dirty_write(#filekey{filename=FileName,key=Key});
+    mnesia:dirty_write(#filekey{filename=FileName,key=Key,ts=nutil:timestamp()});
 
 perform_call({deletekey,Key}) ->
     mnesia:dirty_delete({filekey,Key});

@@ -3,6 +3,9 @@
 %Used for code reloading, doesn't matter much other then that
 -define(MODULE_LIST, [ ]).
 
+%Max time a filekey can be used before expiring, in seconds
+-define(FILEKEY_TTL, 60).
+
 %IPs with sudo privileges
 -define(SUDO_IPS, [
     {127,0,0,1}
@@ -18,7 +21,7 @@
     sudo= false
 }).
 
--record(filekey,{key,filename}).
+-record(filekey,{key,filename,ts}).
 
 -define(FILE_LOCATION,<<"/tmp/cc/">>).
 

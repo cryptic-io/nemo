@@ -89,6 +89,9 @@ list_separate([X],_) -> X;
 list_separate([X|Y],I) -> X++[I]++?MODULE:list_separate(Y,I).
 
 
+timestamp() ->
+    {Mega, Sec, _} = now(),
+    Mega * 1000 * 1000 + Sec.
 
 
 
