@@ -168,19 +168,23 @@ command_downloadFile(Struct,S) ->
 %Pushes data based on the tuple given, and the Meta object given.
 push_data(Sock, Meta, Command, {error,E}) -> ?MODULE:push_data(Sock,Meta,Command,{error,E,[]});
 push_data(Sock, Meta, Command, {error,E,Ex}) ->
-    nutil:keyfind(<<"http">>,Meta) == true andalso ?MODULE:print_http_headers(Sock,json),
+    ?MODULE:try_print_http_headers(Sock,Meta,json),
     nsock:error(Sock,Command,E,Ex);
 
 push_data(Sock, Meta, Command, {success, SuccessMessage}) ->
-    nutil:keyfind(<<"http">>,Meta) == true andalso ?MODULE:print_http_headers(Sock,json),
+    ?MODULE:try_print_http_headers(Sock,Meta,json),
     nsock:success(Sock,Command,SuccessMessage);
 
 push_data(Sock, Meta,_Command, {pipe, Source, SourceSize}) ->
-    nutil:keyfind(<<"http">>,Meta) == true andalso ?MODULE:print_http_headers(Sock,{binary,SourceSize}),
+    ?MODULE:try_print_http_headers(Sock,Meta,{binary,SourceSize}),
     case nfile:pipe_file(Sock,Source) of
     {error,E} -> ?MODULE:push_data(Sock, [], {error, E});
     success -> k
     end.
+
+%Little util to reduce code clutter
+try_print_http_headers(Sock,Meta,Payload) ->
+    nutil:keyfind(<<"http">>,Meta) == true andalso ?MODULE:print_http_headers(Sock,Payload).
 
 %Attemps to trim a newline off the raw data and return it.
 %If there is no newline, assumes there is still more data
