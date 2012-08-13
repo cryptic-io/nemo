@@ -10,12 +10,15 @@
 
 %Define number of children various processes have to distribute work amongst
 -define(NLISTEN_CHILDREN,30).
+-define(NDB_CHILDREN,30).
 
 %Record to define connection state. Used by gconnection mainly, but passed to others
 -record(conn_state,{
     ip= false,
     sudo= false
 }).
+
+-record(filekey,{key,filename}).
 
 -define(FILE_LOCATION,<<"/tmp/cc/">>).
 

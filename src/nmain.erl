@@ -26,19 +26,18 @@ init() ->
 	?MODULE:ping_all(Nodes),
 
     %Starts mnesia and sets up tables
-	%ok = mnesia:start(),
-    %{atomic, ok} = mnesia:create_table(
-    %    bucket,
-    %    [
-    %        {attributes, record_info(fields,bucket)},
-    %        {type,set},
-    %        {index,[node]}
-    %    ]
-    %),
+	ok = mnesia:start(),
+    {atomic, ok} = mnesia:create_table(
+        filekey,
+        [
+            {attributes, record_info(fields,filekey)},
+            {type,set}
+        ]
+    ),
 
     %Hopefully force mnesia to actually pick up its garbage
-    %mnesia_recover:allow_garb(),
-    %mnesia_recover:start_garb(),
+    mnesia_recover:allow_garb(),
+    mnesia_recover:start_garb(),
 
 	%Local threads
     nsupervisor:start(),

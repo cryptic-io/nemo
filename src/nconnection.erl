@@ -75,7 +75,6 @@ handle_data(Socket,Data,S) ->
                 case nrpc:extract(Struct,?COMMAND_EXTRACT) of
                 [{<<"command">>,Command}] -> 
                     ?MODULE:command_dispatch(Socket,Struct,S,Command);
-                    %?MODULE:command_downloadFile(Socket,Struct,S);
                 ErrorObj -> ErrorObj
                 end;
             _ -> {error,bad_json}
@@ -94,14 +93,15 @@ handle_data(Socket,Data,S) ->
 	end.
 
 command_dispatch(Socket,Struct,S,Command) ->
-    Ret = case Command of
-    <<"downloadFile">> ->   ?MODULE:command_downloadFile(Socket,Struct,S);
-    _ ->                    {error, unknown_command}
+    Ret = case {S#conn_state.sudo,Command} of
+    {true,<<"addFileKey">>} ->  ?MODULE:command_addFileKey(Socket,Struct,S);
+    {_,<<"downloadFile">>} ->   ?MODULE:command_downloadFile(Socket,Struct,S);
+    _ ->                        {error, unknown_command}
     end,
 
     case Ret of
-    {error,Error} -> nsock:error(Socket,Command,Error);
-    {error,Error,Extra} -> nsock:error(Socket,Command,Error,Extra);
+    {error,Error} -> nsock:error(Socket,Command,Error), S;
+    {error,Error,Extra} -> nsock:error(Socket,Command,Error,Extra), S;
     NS -> NS
     end.
 
@@ -109,14 +109,35 @@ command_dispatch(Socket,Struct,S,Command) ->
 %%%% Commands
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
--define(DOWNLOADFILE_EXTRACT,[{<<"filename">>,{binary,required,true}}]).
+-define(ADDFILEKEY_EXTRACT,[
+                            {<<"filename">>,{binary,required,true}},
+                            {<<"key">>,{binary,required,true}}
+                        ]).
+command_addFileKey(Socket,Struct,S) ->
+    case nrpc:extract(Struct,?ADDFILEKEY_EXTRACT) of
+    {error,Error,Extra} -> {error,Error,Extra};
+    [{_,Key},{_,FileName}] ->
+        ndb:add_key(FileName,Key),
+        nsock:success(Socket,<<"addFileKey">>),
+        S
+    end.
+
+-define(DOWNLOADFILE_EXTRACT,[
+                                {<<"filename">>,{binary,required,true}},
+                                {<<"key">>,{binary,required,true}}
+                        ]).
 command_downloadFile(Socket,Struct,S) ->
     case nrpc:extract(Struct,?DOWNLOADFILE_EXTRACT) of
-    [{<<"filename">>,FileName}] -> 
-        case nfile:pipe_file(Socket,FileName) of
-        {error,E} -> {error,E};
-        {error,E,Ex} -> {error,E,Ex};
-        success -> S
+    [{_,Key},{_,FileName}] -> 
+        case ndb:get_file_for_key(Key) of
+        FileName ->
+            case nfile:pipe_file(Socket,FileName) of
+            {error,E} -> {error,E};
+            {error,E,Ex} -> {error,E,Ex};
+            success -> 
+                spawn(ndb,delete_key,[Key]), S
+            end;
+        _ -> {error,bad_key}
         end;
     {error,Error,Extra} -> {error,Error,Extra}
     end.

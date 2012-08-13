@@ -13,6 +13,10 @@ gen(Sock,Data) ->
 gen_json(Sock,Data) ->
 	?MODULE:gen(Sock,mochijson2:encode(Data)).
 
+success(Sock,Command) -> ?MODULE:success(Sock,Command,ok).
+success(Sock,Command,SuccessMessage) ->
+    ?MODULE:gen_json(Sock,[{success,SuccessMessage},{command,Command}]).
+
 error(Sock,Command,Error) ->
     ?MODULE:gen_json(Sock,[{command,Command},{error,Error}]).
 error(Sock,Command,Error,Extra) ->
