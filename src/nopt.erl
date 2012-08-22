@@ -34,7 +34,11 @@ setOpt(Opts,Opt,Val) -> lists:keystore(Opt,1,Opts,{Opt,Val}).
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 start() -> gen_server:start_link({local,nemo_nopt},?MODULE,'_',[]).
-init(_) -> {ok,#state{options=?MODULE:parse_options()},?LOOP_TIMEOUT}.
+init(_) -> 
+    case file:script("config") of
+    {ok, Options} -> {ok,#state{options=Options},?LOOP_TIMEOUT};
+    {error,E}     -> error_logger:error_msg("Couldn't parse config: ~p\n",[E]),{stop, E}
+    end.
 
 handle_call({getopt,Key},_,S) ->
     #state{options=Opts} = S,
@@ -61,9 +65,3 @@ handle_info(Wut,S) ->
 code_change(_,State,_) ->
     {ok,State}.
 terminate(_,_) -> put_me_down.
-
-parse_options() -> ?MODULE:parse_options(init:get_plain_arguments()).
-parse_options([]) -> [];
-parse_options([_]) -> [];
-parse_options([Key,Value|R]) ->
-    [{Key,Value}|?MODULE:parse_options(R)].

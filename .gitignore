@@ -3,4 +3,5 @@ ebin/sasl.app
 erl_crash.dump
 log/*
 start.sh
+config
 src/nodelist.hrl

@@ -1,7 +1,12 @@
 #!/bin/sh
 
-#Erl path
-ERL_PATH=/usr/bin/erl
+#Switches us to the directory of start.sh, no matter where we're
+#running it from
+cd "$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+#Erl path (hardcoded or programatically)
+#ERL_PATH=/usr/bin/erl
+ERL_PATH=`which erl`
 
 #Node name
 #Takes the form: server_name@local_ip
@@ -11,11 +16,11 @@ NODE_NAME='nemo@127.0.0.1'
 #Cookie string, must be the same across all nodes
 COOKIE='deadmau5 is extremely overrated'
 
-if [ $1 ]; then
+if [ "$1" == "-detached" ]; then
 DETACHED="-detached"
 fi
 
-#For production use HOME=/root
+#For production use /root, forces nemo to run as root
 #export HOME=/root
 export HOME=~
 
@@ -23,6 +28,4 @@ exec $ERL_PATH -pa $PWD/ebin $PWD/deps/*/ebin -s nmain \
 +K true +P 10000000 -env ERL_MAX_ETS_TABLES 1000000 \
 -name $NODE_NAME \
 -setcookie $COOKIE $DETACHED \
--kernel inet_dist_listen_min 4000 inet_dist_listen_max 4000 \
--extra "port" "8000" \
-       "sasl" "false"
+-kernel inet_dist_listen_min 4000 inet_dist_listen_max 4000

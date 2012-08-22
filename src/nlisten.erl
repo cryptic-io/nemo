@@ -16,10 +16,10 @@ start() ->
 
 init(_) ->
 	%Gets the listen socket, generates acceptor threads
-    Port = list_to_integer(nopt:global_getOpt("port")),
+    Port = nopt:global_getOpt(publicport),
 	case gen_tcp:listen(Port, ?TCP_OPTS) of
 	{ok, Listen} -> {ok,{?NLISTEN_CHILDREN,Listen},Listen,?LOOP_TIMEOUT};
-    _ -> {stop,port_unavailable}
+    E -> {stop,E}
 	end.
 
 %Shouldn't happen

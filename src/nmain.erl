@@ -40,11 +40,13 @@ init() ->
     mnesia_recover:start_garb(),
 
 	%Local threads
+    error_logger:info_msg("Supervisor starting\n"),
     nsupervisor:start(),
+    error_logger:info_msg("Supervisor started\n"),
 
     %Needs to be done after supervisor since the nopt thread hasn't been
     %started yet
-    case nopt:global_getOpt("sasl") of
+    case nopt:global_getOpt(sasl) of
     "true" -> application:start(sasl);
     _ -> bummer
     end,
