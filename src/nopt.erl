@@ -21,9 +21,11 @@ global_setOpt(Key,Value) -> gen_server:cast(nemo_nopt,{setopt,Key,Value}).
 
 %Gets the value of Opt from the Opts structure, returns false if it's not there
 getOpt(Opts,Opt) ->
-    case lists:keyfind(Opt,1,Opts) of
-    {Opt,Res} -> Res;
-    false -> false
+    case nutil:keyfind(Opt,Opts) of
+    dne -> 
+        error_logger:error_msg("Opt ~p not found in nopt\n",[Opt]),
+        false;
+    Res -> Res
     end.
 
 %Sets/resets the Val of Opt in the Opts structure
@@ -42,16 +44,20 @@ init(_) ->
 
 handle_call({getopt,Key},_,S) ->
     #state{options=Opts} = S,
-    {Key,Value} = lists:keyfind(Key,1,Opts),
-    {reply,Value,S,?LOOP_TIMEOUT};
+    Ret = case ?MODULE:getOpt(Opts,Key) of
+    {Key,Value} -> Value;
+    O -> O
+    end,
+    {reply,Ret,S,?LOOP_TIMEOUT};
 handle_call(Wut,From,S) ->
     error_logger:error_msg("nopt got call ~w from ~w\n",[Wut,From]),
     {noreply,S,?LOOP_TIMEOUT}.
 
 handle_cast({setopt,Key,Value},S) ->
     #state{options=Opts} = S,
-    NewOpts = lists:keystore(Key,1,Opts,{Key,Value}),
+    NewOpts = ?MODULE:setOpt(Opts,Key,Value),
     {noreply,S#state{options=NewOpts},?LOOP_TIMEOUT};
+
 handle_cast(Wut,S) ->
     error_logger:error_msg("nopt got cast ~w\n",[Wut]),
     {noreply,S,?LOOP_TIMEOUT}.

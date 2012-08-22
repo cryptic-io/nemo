@@ -11,14 +11,14 @@
 %%% Parent
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-start() -> 
-    gen_pool:start_link({local,nemo_nlisten},?MODULE,'_',[]).
+start(CBModule,PortOpt) -> 
+    gen_pool:start_link(?MODULE,{CBModule,PortOpt},[]).
 
-init(_) ->
+init({CBModule,PortOpt}) ->
 	%Gets the listen socket, generates acceptor threads
-    Port = nopt:global_getOpt(publicport),
+    Port = nopt:global_getOpt(PortOpt),
 	case gen_tcp:listen(Port, ?TCP_OPTS) of
-	{ok, Listen} -> {ok,{?NLISTEN_CHILDREN,Listen},Listen,?LOOP_TIMEOUT};
+	{ok, Listen} -> {ok,{?NLISTEN_CHILDREN,{CBModule,Listen}},Listen,?LOOP_TIMEOUT};
     E -> {stop,E}
 	end.
 
@@ -47,17 +47,19 @@ terminate(_,_) -> flips_the_table.
 %%% Child
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-child_init(L) -> {ok,L,?CHILD_LOOP_TIMEOUT}.
+-record(child_state,{l,cbmodule}).
 
-child_handle_info(timeout,L) ->
-	case gen_tcp:accept(L,60000) of
+child_init({CBModule,L}) -> {ok,#child_state{l=L,cbmodule=CBModule},?CHILD_LOOP_TIMEOUT}.
+
+child_handle_info(timeout,S) ->
+	case gen_tcp:accept(S#child_state.l,60000) of
     {ok, Socket} ->
-	    Pid = spawn(nconnection,get_sock,[]),
+	    Pid = spawn(S#child_state.cbmodule,get_sock,[]),
 	    gen_tcp:controlling_process(Socket,Pid),
         Pid!{ohaithar,Socket};
     {error,_} -> fuck_em
     end,
-    {noreply,L,?CHILD_LOOP_TIMEOUT};
+    {noreply,S,?CHILD_LOOP_TIMEOUT};
 
 child_handle_info(Wut,S) ->
     error_logger:error_msg("nlisten_child got info ~w\n",[Wut]),

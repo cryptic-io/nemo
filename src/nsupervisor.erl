@@ -9,6 +9,7 @@
 -export([init/1]).
 
 -define(WORKER(Mod,Params), {Mod, {Mod, start, Params}, permanent, 1000, worker, [Mod] }).
+-define(SUP(Mod,Params), {Mod, {Mod, start, Params}, permanent, 1000, supervisor, [Mod] }).
 
 start() -> {ok,_} = supervisor:start_link({local,nemo_nsupervisor},?MODULE,'_').
 
@@ -19,6 +20,6 @@ init(_) ->
             ?WORKER(nopt,[]),
             ?WORKER(ndb,[]),
             ?WORKER(ngarbagecollector,[]),
-            ?WORKER(nlisten,[])
+            ?SUP(nlisten_sup,[])
         ]
     }}.

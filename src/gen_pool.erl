@@ -41,6 +41,11 @@ behavior_info(_) -> undefined.
 %%% Public methods
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+start(Module,Args,Opts) -> 
+    gen_server:start(?MODULE,{Module,Args},Opts).
+start_link(Module,Args,Opts) -> 
+    gen_server:start_link(?MODULE,{Module,Args},Opts).
+
 start(Name,Module,Args,Opts) -> 
     gen_server:start(Name,?MODULE,{Module,Args},Opts).
 start_link(Name,Module,Args,Opts) -> 
