@@ -25,7 +25,7 @@ command_downloadFile(Struct,S) ->
         [{_,Key},{_,FileName}] -> 
             case ndb:get_file_for_key(Key) of
             FileName ->
-                case nfile:file_size(FileName) of
+                case nfile:size(FileName) of
                 {error,E} -> {error,E};
                 Size ->
                     spawn(ndb,delete_key,[Key]),

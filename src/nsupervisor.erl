@@ -20,6 +20,7 @@ init(_) ->
             ?WORKER(nopt,[]),
             ?WORKER(ndb,[]),
             ?WORKER(ngarbagecollector,[]),
+            ?WORKER(nfs,[]),
             ?SUP(nlisten_sup,[])
         ]
     }}.

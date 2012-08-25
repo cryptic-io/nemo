@@ -134,7 +134,7 @@ push_data(Sock, Meta, Command, {success, SuccessMessage}) ->
 
 push_data(Sock, Meta,_Command, {pipe, Source, SourceSize}) ->
     ?MODULE:try_print_http_headers(Sock,Meta,{binary,SourceSize}),
-    case nfile:pipe_file(Sock,Source) of
+    case nfile:pipe(Sock,Source) of
     {error,E} -> ?MODULE:push_data(Sock, [], {error, E});
     success -> k
     end.

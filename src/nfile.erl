@@ -4,7 +4,7 @@
 -include_lib("kernel/include/file.hrl").
 -compile(export_all).
 
-pipe_file(Socket,FileName) ->
+pipe(Socket,FileName) ->
     case byte_size(FileName) < 2 of
     true -> {error,filename_too_small};
     false ->
@@ -17,11 +17,15 @@ pipe_file(Socket,FileName) ->
         end
     end.
 
-file_size(FileName) ->
+size(FileName) ->
     case file:read_file_info(?MODULE:full_path(FileName)) of
     {ok, FileInfo} -> FileInfo#file_info.size;
-    {error,E} -> {error,E}
+    {error,enoent} -> {error,file_dne};
+    {error,E}      -> {error,E}
     end.
+
+exists(FileName) ->
+    filelib:is_file(?MODULE:full_path(FileName)).
 
 
 full_path(<<A,B,_/binary>> = FileName) ->

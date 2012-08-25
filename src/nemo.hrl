@@ -23,6 +23,7 @@
 }).
 
 -record(filekey,{key,filename,ts}).
+-record(file,   {filename,size}).
 
 -define(FILE_LOCATION,<<"/tmp/cc/">>).
 

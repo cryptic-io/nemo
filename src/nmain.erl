@@ -3,13 +3,11 @@
 -include("nemo.hrl").
 -compile(export_all).
 
--define(PMAP_TABLE(Name), mnesia:create_table(
+-define(TABLE(Name), mnesia:create_table(
         Name,
         [
-            {record_name,pmap},
-            {attributes, record_info(fields,pmap)},
-            {type,set},
-            {index,[bucket]}
+            {attributes, record_info(fields,Name)},
+            {type,set}
         ])).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -27,13 +25,9 @@ init() ->
 
     %Starts mnesia and sets up tables
 	ok = mnesia:start(),
-    {atomic, ok} = mnesia:create_table(
-        filekey,
-        [
-            {attributes, record_info(fields,filekey)},
-            {type,set}
-        ]
-    ),
+    {atomic,ok} = ?TABLE(filekey),
+    {atomic,ok} = ?TABLE(file),
+
 
     %Hopefully force mnesia to actually pick up its garbage
     mnesia_recover:allow_garb(),

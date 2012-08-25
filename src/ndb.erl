@@ -17,8 +17,9 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 add_key(FileName,Key) -> ndb:call({addkey,FileName,Key}).
-delete_key(Key) -> ndb:call({deletekey,Key}).
+delete_key(Key)       -> ndb:call({deletekey,Key}).
 get_file_for_key(Key) -> ndb:call({getfileforkey,Key}).
+add_file(FileRec)     -> ndb:call({addfile,FileRec}).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Carrying out calls
@@ -34,7 +35,10 @@ perform_call({getfileforkey,Key}) ->
     case ?MODULE:select_full(filekey,Key) of
     empty -> {error,bad_key};
     FileKey -> FileKey#filekey.filename
-    end.
+    end;
+
+perform_call({addfile,FileRec}) ->
+   mnesia:dirty_write(FileRec). 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Parent
@@ -124,5 +128,5 @@ select_all(Table) -> ?MODULE:select_all(Table, ?MODULE:first(Table) ).
 select_all(_,empty) -> done;
 select_all(Table,R) ->
     io:fwrite("~w\n",[R]),
-    ?MODULE:select_all( Table,?MODULE:next(Table,R#filekey.key) ).
+    ?MODULE:select_all( Table,?MODULE:next(Table,lists:nth(2,tuple_to_list(R))) ).
 
