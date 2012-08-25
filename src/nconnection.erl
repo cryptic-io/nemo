@@ -6,18 +6,18 @@
 %Gets the sock, sent from an accept_loop. this pid will already
 %be the controlling process by the time this happens, so the race
 %condition can't happen
-get_sock() ->
+get_sock(Handler) ->
     receive
-    {ohaithar,Sock} -> ?MODULE:process_sock(Sock)
+    {ohaithar,Sock} -> ?MODULE:process_sock(Sock,Handler)
     after 10000 -> throw(get_sock_timeout)
     end.
     
 %Processes sock, determining its originating IP before beginning the loop
-process_sock(Sock) ->
+process_sock(Sock,Handler) ->
     case inet:peername(Sock) of
     {ok,{Ip,_Port}} -> 
         Sudo = nutil:check_ip_sudo(Ip),
-        ?MODULE:process_sock_loop(Sock,#conn_state{ip=Ip,sudo=Sudo});
+        ?MODULE:process_sock_loop(Sock,#conn_state{ip=Ip,sudo=Sudo,handler=Handler});
     _ -> nsock:close(Sock)
     end.
 
@@ -107,12 +107,8 @@ handle_data(Socket,Data,S) ->
 
 %Dispatches the command with given meta and struct. The command function will return
 %the new state for the connection and a tuple which will be sent into push_data.
-command_dispatch(Socket,Struct,Meta,S,Command) ->
-    {NS, PushCommand} = case {S#conn_state.sudo,Command} of
-    {true,<<"addFileKey">>} ->  ?MODULE:command_addFileKey(Struct,S);
-    {_,<<"downloadFile">>}  ->  ?MODULE:command_downloadFile(Struct,S);
-    _ ->                        {error, unknown_command}
-    end,
+command_dispatch(Socket,Struct,Meta,#conn_state{handler=Handler} = S,Command) ->
+    {NS, PushCommand} = Handler:command_dispatch(Command,Struct,S),
 
     ?MODULE:push_data(Socket,Meta,Command,PushCommand),
 
@@ -121,45 +117,6 @@ command_dispatch(Socket,Struct,Meta,S,Command) ->
     false -> NS
     end.
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%% Commands
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
--define(ADDFILEKEY_EXTRACT,[
-                                {<<"filename">>,{binary,required,true}},
-                                {<<"key">>,{binary,required,true}}
-                           ]).
-command_addFileKey(Struct,S) ->
-    Ret = case nrpc:extract(Struct,?ADDFILEKEY_EXTRACT) of
-    {error,Error,Extra} -> {error,Error,Extra};
-    [{_,Key},{_,FileName}] ->
-        ndb:add_key(FileName,Key),
-        {success,<<"addFileKey">>}
-    end,
-    {S,Ret}.
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
--define(DOWNLOADFILE_EXTRACT,[
-                                {<<"filename">>,{binary,required,true}},
-                                {<<"key">>,{binary,required,true}}
-                             ]).
-command_downloadFile(Struct,S) ->
-    Ret = case nrpc:extract(Struct,?DOWNLOADFILE_EXTRACT) of
-    [{_,Key},{_,FileName}] -> 
-        case ndb:get_file_for_key(Key) of
-        FileName ->
-            case nfile:file_size(FileName) of
-            {error,E} -> {error,E};
-            Size ->
-                spawn(ndb,delete_key,[Key]),
-                {pipe,FileName,Size}
-            end;
-        _ -> {error,bad_key}
-        end;
-    {error,Error,Extra} -> {error,Error,Extra}
-    end,
-    {S,Ret}.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Data pulling/pushing and processing

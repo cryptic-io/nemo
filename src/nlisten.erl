@@ -7,18 +7,26 @@
 -define(CHILD_LOOP_TIMEOUT,1).
 -define(TCP_OPTS, [binary, {packet, raw}, {nodelay, true}, {reuseaddr, true}, {active, false},{keepalive,true},{backlog,500},{send_timeout,60000},{send_timeout_close,true}]).
 
+-record(child_state,{l,cbmodule,handler}).
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Parent
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-start(CBModule,PortOpt) -> 
-    gen_pool:start_link(?MODULE,{CBModule,PortOpt},[]).
+start(CBModule,PortOpt,Handler) -> 
+    gen_pool:start_link(?MODULE,{CBModule,PortOpt,Handler},[]).
 
-init({CBModule,PortOpt}) ->
+init({CBModule,PortOpt,Handler}) ->
 	%Gets the listen socket, generates acceptor threads
     Port = nopt:global_getOpt(PortOpt),
 	case gen_tcp:listen(Port, ?TCP_OPTS) of
-	{ok, Listen} -> {ok,{?NLISTEN_CHILDREN,{CBModule,Listen}},Listen,?LOOP_TIMEOUT};
+	{ok, Listen} -> {ok,
+                       {?NLISTEN_CHILDREN,
+                        #child_state{l=Listen,
+                                     cbmodule=CBModule,
+                                     handler=Handler}},
+                     Listen,
+                     ?LOOP_TIMEOUT};
     E -> {stop,E}
 	end.
 
@@ -47,14 +55,12 @@ terminate(_,_) -> flips_the_table.
 %%% Child
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
--record(child_state,{l,cbmodule}).
+child_init(S) -> {ok,S,?CHILD_LOOP_TIMEOUT}.
 
-child_init({CBModule,L}) -> {ok,#child_state{l=L,cbmodule=CBModule},?CHILD_LOOP_TIMEOUT}.
-
-child_handle_info(timeout,S) ->
-	case gen_tcp:accept(S#child_state.l,60000) of
+child_handle_info(timeout, #child_state{l=L,cbmodule=CBModule,handler=Handler} = S) ->
+	case gen_tcp:accept(L,60000) of
     {ok, Socket} ->
-	    Pid = spawn(S#child_state.cbmodule,get_sock,[]),
+	    Pid = spawn(CBModule,get_sock,[Handler]),
 	    gen_tcp:controlling_process(Socket,Pid),
         Pid!{ohaithar,Socket};
     {error,_} -> fuck_em

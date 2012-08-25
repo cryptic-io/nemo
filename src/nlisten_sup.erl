@@ -17,8 +17,8 @@ init(_) ->
     {ok, {
         {one_for_one, 100, 1000},
         [
-            ?WORKER(private_port,nlisten,[nconnection,privateport]),
-            ?WORKER(public_port,nlisten,[nconnection,publicport])
+            ?WORKER(private_port,nlisten,[nconnection,privateport,nprivatehandler]),
+            ?WORKER(public_port,nlisten,[nconnection,publicport,npublichandler])
         ]
     }}.
 

@@ -18,7 +18,8 @@
 %Record to define connection state. Used by gconnection mainly, but passed to others
 -record(conn_state,{
     ip= false,
-    sudo= false
+    sudo= false,
+    handler= false
 }).
 
 -record(filekey,{key,filename,ts}).
