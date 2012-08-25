@@ -68,11 +68,11 @@ handle_datas(Sock,[Data|Datas],S) ->
 %Handles data that's come in from the tcp socket.
 %Promises to loop back to process_sock_loop
 -define(COMMAND_EXTRACT,[
-                            {<<"meta">>, {struct,{struct,[]},true}},
-                            {<<"command">>,{binary,required,true}}
+                            {<<"meta">>, {struct,{struct,[]}}},
+                            {<<"command">>,{binary,required}}
                         ]).
 -define(META_EXTRACT,[
-                            {<<"http">>, {bool, false, true}}
+                            {<<"http">>, {bool, false}}
                      ]).
 handle_data(Socket,Data,S) ->
     case Data of

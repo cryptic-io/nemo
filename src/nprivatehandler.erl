@@ -14,8 +14,8 @@ command_dispatch(Command,Struct,S) ->
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 -define(ADDFILEKEY_EXTRACT,[
-                                {<<"filename">>,{binary,required,true}},
-                                {<<"key">>,{binary,required,true}}
+                                {<<"filename">>,{binary,required}},
+                                {<<"key">>,{binary,required}}
                            ]).
 command_addFileKey(Struct,S) ->
     Ret = case nrpc:extract(Struct,?ADDFILEKEY_EXTRACT) of

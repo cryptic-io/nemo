@@ -16,8 +16,8 @@ command_dispatch(Command,Struct,S) ->
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 -define(DOWNLOADFILE_EXTRACT,[
-                                {<<"filename">>,{binary,required,true}},
-                                {<<"key">>,{binary,required,true}}
+                                {<<"filename">>,{binary,required}},
+                                {<<"key">>,{binary,required}}
                              ]).
 command_downloadFile(Struct,S) ->
     Ret = 

@@ -35,20 +35,14 @@ extract(StructL,[{Key,MetaData}|MetaList],Ret) ->
     end.
 
 %key doesn't exist but required is an error
-process_metadata( dne, {_,required,_} ) -> {error, dne};
+process_metadata( dne, {_,required} ) -> {error, dne};
 %key doesn't exist but has a default, return that default
-process_metadata( dne, {_,Default,true} ) -> {return,Default};
-%key doesn't exist but isn't required, don't even bother processing
-process_metadata( dne, {_,_,false} ) -> pass;
+process_metadata( dne, {_,Default} ) -> {return,Default};
 
-process_metadata( Value, {MetaType,_,Return} ) ->
+process_metadata( Value, {MetaType,_} ) ->
     case process_value(Value,MetaType) of
-    {error,E} -> {error,E};
-    CleanValue ->
-        case Return of
-        true -> {return, CleanValue};
-        false -> pass
-        end
+    {error,E}  -> {error,  E};
+    CleanValue -> {return, CleanValue}
     end.
 
 %Check binary
