@@ -20,6 +20,7 @@ add_key(FileName,Key) -> ndb:call({addkey,FileName,Key}).
 delete_key(Key)       -> ndb:call({deletekey,Key}).
 get_file_for_key(Key) -> ndb:call({getfileforkey,Key}).
 add_file(FileRec)     -> ndb:call({addfile,FileRec}).
+file_exists(FileName) -> ndb:call({fileexists,FileName}).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Carrying out calls
@@ -38,7 +39,13 @@ perform_call({getfileforkey,Key}) ->
     end;
 
 perform_call({addfile,FileRec}) ->
-   mnesia:dirty_write(FileRec). 
+   mnesia:dirty_write(FileRec);
+
+perform_call({fileexists,FileName}) ->
+    case ?MODULE:select_full(file,FileName) of
+    empty -> false;
+    _     -> true
+    end.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Parent

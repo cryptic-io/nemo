@@ -11,6 +11,7 @@
 -define(LOOP_TIMEOUT,60000).
 
 add_file(FileName) -> gen_server:call(nemo_nfs,{add_file,FileName}).
+exists(FileName)   -> gen_server:call(nemo_nfs,{exists,  FileName}).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% gen_server
@@ -30,6 +31,9 @@ handle_call({add_file,FileName},_From,S) ->
 
     {reply,Ret,S,?LOOP_TIMEOUT};
 
+handle_call({exists,FileName},_From,S) ->
+    {reply, ndb:file_exists(FileName), S, ?LOOP_TIMEOUT};
+
 handle_call(Wut,From,S) ->
     error_logger:error_msg("nfs got call ~w from ~w\n",[Wut,From]),
     {noreply,S,?LOOP_TIMEOUT}.
@@ -38,6 +42,8 @@ handle_cast(Wut,S) ->
     error_logger:error_msg("nfs got cast ~w\n",[Wut]),
     {noreply,S,?LOOP_TIMEOUT}.
 
+handle_info(timeout,S) ->
+    {noreply,S,?LOOP_TIMEOUT};
 handle_info(Wut,S) ->
     error_logger:error_msg("nfs got info ~w\n",[Wut]),
     {noreply,S,?LOOP_TIMEOUT}.
