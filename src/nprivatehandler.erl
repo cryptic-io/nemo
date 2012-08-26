@@ -5,8 +5,8 @@
 
 command_dispatch(Command,Struct,S) ->
     case {S#conn_state.sudo,Command} of
-    {true,<<"addFileKey">>} ->  ?MODULE:command_addFileKey(Struct,S);
-    {true,<<"addFile">>}    ->  ?MODULE:command_addFile(Struct,S);
+    {true,<<"addFileKeys">>} ->  ?MODULE:command_addFileKeys(Struct,S);
+    {true,<<"addFile">>}     ->  ?MODULE:command_addFile(Struct,S);
     _ ->                        {S, {error, unknown_command}}
     end.
 
@@ -14,17 +14,28 @@ command_dispatch(Command,Struct,S) ->
 %%%% Commands
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+-define(ADDFILEKEYS_EXTRACT,[
+                                {<<"filekeys">>,{list,required}}
+                            ]).
 -define(ADDFILEKEY_EXTRACT,[
                                 {<<"filename">>,{binary,required}},
                                 {<<"key">>,{binary,required}}
                            ]).
-command_addFileKey(Struct,S) ->
+command_addFileKeys(Struct,S) ->
     Ret = 
-        case nrpc:extract(Struct,?ADDFILEKEY_EXTRACT) of
+        case nrpc:extract(Struct,?ADDFILEKEYS_EXTRACT) of
         {error,Error,Extra} -> {error,Error,Extra};
-        [{_,Key},{_,FileName}] ->
-            ndb:add_key(FileName,Key),
-            {success,<<"addFileKey">>}
+        [{_,FileKeys}] ->
+            RetList = lists:map(fun(FileKey) ->
+                case nrpc:extract(FileKey,?ADDFILEKEY_EXTRACT) of
+                {error,Error,Extra} -> 
+                    {struct,[{error,Error}|Extra]};
+                [{_,Key},{_,Filename}] ->
+                    ndb:add_key(Filename,Key),
+                    {struct,[{filename,Filename},{success,ok}]}
+                end
+            end,FileKeys),
+            {return,RetList}
         end,
     {S,Ret}.
 

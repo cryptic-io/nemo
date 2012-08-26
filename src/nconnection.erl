@@ -132,6 +132,10 @@ push_data(Sock, Meta, Command, {success, SuccessMessage}) ->
     ?MODULE:try_print_http_headers(Sock,Meta,json),
     nsock:success(Sock,Command,SuccessMessage);
 
+push_data(Sock, Meta, Command, {return, RetMessage}) ->
+    ?MODULE:try_print_http_headers(Sock,Meta,json),
+    nsock:gen_json(Sock,[{command,Command},{return,RetMessage}]);
+
 push_data(Sock, Meta,_Command, {pipe, Source, SourceSize}) ->
     ?MODULE:try_print_http_headers(Sock,Meta,{binary,SourceSize}),
     case nfile:pipe(Sock,Source) of
