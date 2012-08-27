@@ -26,15 +26,16 @@ command_addFileKeys(Struct,S) ->
         case nrpc:extract(Struct,?ADDFILEKEYS_EXTRACT) of
         {error,Error,Extra} -> {error,Error,Extra};
         [{_,FileKeys}] ->
-            RetList = lists:map(fun(FileKey) ->
-                case nrpc:extract(FileKey,?ADDFILEKEY_EXTRACT) of
-                {error,Error,Extra} -> 
-                    {struct,[{error,Error}|Extra]};
-                [{_,Key},{_,Filename}] ->
-                    ndb:add_key(Filename,Key),
-                    {struct,[{filename,Filename},{success,ok}]}
-                end
-            end,FileKeys),
+            RetList = 
+                lists:map(fun(FileKey) ->
+                    case nrpc:extract(FileKey,?ADDFILEKEY_EXTRACT) of
+                    {error,Error,Extra} -> 
+                        {struct,[{error,Error}|Extra]};
+                    [{_,Key},{_,Filename}] ->
+                        ndb:add_key(Filename,Key),
+                        {struct,[{filename,Filename},{key,Key}]}
+                    end
+                end,FileKeys),
             {return,RetList}
         end,
     {S,Ret}.
