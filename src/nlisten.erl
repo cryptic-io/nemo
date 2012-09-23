@@ -16,9 +16,8 @@
 start(CBModule,PortOpt,Handler) -> 
     gen_pool:start_link(?MODULE,{CBModule,PortOpt,Handler},[]).
 
-init({CBModule,PortOpt,Handler}) ->
+init({CBModule,Port,Handler}) ->
 	%Gets the listen socket, generates acceptor threads
-    Port = nopt:global_getOpt(PortOpt),
 	case gen_tcp:listen(Port, ?TCP_OPTS) of
 	{ok, Listen} -> {ok,
                        {?NLISTEN_CHILDREN,

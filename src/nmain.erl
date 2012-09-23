@@ -33,15 +33,13 @@ init() ->
     mnesia_recover:allow_garb(),
     mnesia_recover:start_garb(),
 
-	%Local threads
-    nsupervisor:start(),
-
-    %Needs to be done after supervisor since the nopt thread hasn't been
-    %started yet
-    case nopt:global_getOpt(sasl) of
-    "true" -> application:start(sasl);
+    case ?SASL_ENABLED of
+    true -> application:start(sasl);
     _ -> bummer
     end,
+
+	%Local threads
+    nsupervisor:start(),
 
     %Hack to keep the supervisor alive
     error_logger:info_msg("Nemo started\n"),

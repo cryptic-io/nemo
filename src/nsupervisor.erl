@@ -17,7 +17,6 @@ init(_) ->
     {ok, {
         {one_for_one, 100, 1000},
         [
-            ?WORKER(nopt,[]),
             ?WORKER(ndb,[]),
             ?WORKER(ngarbagecollector,[]),
             ?WORKER(nfs,[]),
