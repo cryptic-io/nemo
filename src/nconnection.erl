@@ -177,6 +177,8 @@ print_http_headers(Sock,json) ->
         "HTTP/1.1 OK\r\n",
         "Content-Type: application/json\r\n",
         "Server: nemo\r\n",
+        "Access-Control-Allow-Origin: http://localhost\r\n"
+        "Access-Control-Allow-Methods: POST, GET, OPTIONS\r\n"
         "\r\n"
     ]);
 print_http_headers(Sock,{binary,Size}) ->
@@ -185,5 +187,7 @@ print_http_headers(Sock,{binary,Size}) ->
         "Content-Type: application/octet-stream\r\n",
         "Content-Length: ",integer_to_list(Size),"\r\n",
         "Server: nemo\r\n",
+        "Access-Control-Allow-Origin: http://localhost\r\n"
+        "Access-Control-Allow-Methods: POST, GET, OPTIONS\r\n"
         "\r\n"
     ]).
