@@ -1,5 +1,4 @@
-ebin/*.beam
-ebin/sasl.app
+ebin
 erl_crash.dump
 log/*
 start.sh
