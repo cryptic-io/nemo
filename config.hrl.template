@@ -19,3 +19,6 @@
 
 %Document root
 -define(FILE_LOCATION,<<"/tmp/cc/">>).
+
+%Origin of requests for CORS
+-define(ORIGIN,"http://localhost").
