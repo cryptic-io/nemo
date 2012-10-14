@@ -27,6 +27,18 @@ size(FileName) ->
 exists(FileName) ->
     filelib:is_file(?MODULE:full_path(FileName)).
 
-
 full_path(<<A,B,_/binary>> = FileName) ->
     <<?FILE_LOCATION/binary,A,$/,B,$/,FileName/binary>>.
+
+%Performs Fun on each file in under ?FILE_LOCATION, where the
+%param passed into fun is the name of the file (not full path)
+foreach_file(Fun) ->
+    FileLoc = binary_to_list(?FILE_LOCATION),
+    Dirs = filelib:wildcard(FileLoc++[$*]),
+    lists:foreach(fun(InDir) ->
+        Dirs2 = filelib:wildcard(InDir++[$/,$*]),
+        lists:foreach(fun(InDir2) ->
+            {ok,Files} = file:list_dir(InDir2),
+            lists:foreach(fun(File) -> Fun(list_to_binary(File)) end,Files)
+        end,Dirs2)
+    end,Dirs).
