@@ -51,11 +51,11 @@ perform_call({fileexists,FileName}) ->
 %%% Parent
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-start() -> gen_pool:start_link({local,nemo_gdb},?MODULE,'_',[]).
+start() -> gen_pool:start_link({local,nemo_ndb},?MODULE,'_',[]).
 
 %Performs a db call and receives the result, returning it
 call(Call) ->
-    gen_server:call(nemo_gdb,Call).
+    gen_server:call(nemo_ndb,Call).
 
 init(_) -> {ok,{?NDB_CHILDREN,[]},'_',?LOOP_TIMEOUT}.
 
@@ -109,6 +109,12 @@ child_terminate(_,_) -> i_dont_blame_you.
 %%% Util
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+%Deletes a row
+delete(Table,Name) ->
+    ok = mnesia:dirty_delete(Table,Name).
+delete_object(Table,R) ->
+    ok = mnesia:dirty_delete_object(Table,R).
+
 %Returns the first record in the db
 first(Table) ->
 	case mnesia:dirty_first(Table) of
@@ -117,7 +123,8 @@ first(Table) ->
 	end.
 
 %Returns the record in the db just after Key
-next(Table,Key) ->
+next(Table,R) ->
+    Key = ?MODULE:primary(R),
 	case mnesia:dirty_next(Table,Key) of
 	'$end_of_file' -> empty;
 	Rkey -> ?MODULE:select_full(Table,Rkey)
@@ -127,13 +134,20 @@ next(Table,Key) ->
 select_full(Table,Name) ->
     case mnesia:dirty_read(Table,Name) of
     [S] -> S;
-    [] -> empty
+    [] -> empty;
+    S -> S
     end.
+
+primary(R) ->
+    lists:nth(2,tuple_to_list(R)).
 
 %Prints out all records in the local db
 select_all(Table) -> ?MODULE:select_all(Table, ?MODULE:first(Table) ).
 select_all(_,empty) -> done;
+select_all(Table,[F|_] = S) ->
+    lists:foreach(fun(R) -> io:fwrite("~w\n",[R]) end,S),
+    ?MODULE:select_all( Table,?MODULE:next(Table,F) ); 
+select_all(_,[]) -> done;
 select_all(Table,R) ->
-    io:fwrite("~w\n",[R]),
-    ?MODULE:select_all( Table,?MODULE:next(Table,lists:nth(2,tuple_to_list(R))) ).
+    ?MODULE:select_all( Table,[R] ).
 
