@@ -1,7 +1,25 @@
 -include("../config.hrl").
 
 %Used for code reloading, doesn't matter much other then that
--define(MODULE_LIST, [ ]).
+-define(MODULE_LIST, [
+    gen_pool,
+    gen_pool_child,
+    mochijson2,
+    nconnection,
+    ndb,
+    nfile,
+    nfs,
+    ngarbagecollector,
+    nlisten,
+    nlisten_sup,
+    nmain,
+    nprivatehandler,
+    npublichandler,
+    nrpc,
+    nsock,
+    nsupervisor,
+    nutil
+]).
 
 %Max time a filekey can be used before expiring, in seconds
 -define(FILEKEY_TTL, 60).

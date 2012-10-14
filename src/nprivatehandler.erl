@@ -7,6 +7,7 @@ command_dispatch(Command,Struct,S) ->
     case {S#conn_state.sudo,Command} of
     {true,<<"addFileKeys">>} ->  ?MODULE:command_addFileKeys(Struct,S);
     {true,<<"addFile">>}     ->  ?MODULE:command_addFile(Struct,S);
+    {true,<<"reload">>}      ->  ?MODULE:command_reload(Struct,S);
     _ ->                        {S, {error, unknown_command}}
     end.
 
@@ -56,3 +57,9 @@ command_addFile(Struct,S) ->
             end
         end,
     {S,Ret}.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+command_reload(_,S) ->
+    ndev:reload_all(),
+    {S,{success,<<"reload">>}}.
