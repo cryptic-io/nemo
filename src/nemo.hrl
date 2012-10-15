@@ -36,7 +36,7 @@
 }).
 
 -record(filekey,{key,filename,ts}).
--record(file,   {filename,size}).
+-record(file,   {filename,size,dirty}).
 
 %Hack to turn a record into a tuplelist
 -define(record_to_tuplelist(Rec, Ref), lists:zip(record_info(fields, Rec),tl(tuple_to_list(Ref)))).

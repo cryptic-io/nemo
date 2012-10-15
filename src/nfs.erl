@@ -25,7 +25,7 @@ handle_call({add_file,FileName},_From,S) ->
         case nfile:size(FileName) of
         {error,E} -> {error,E};
         Size      -> 
-            ndb:add_file(#file{filename=FileName,size=Size}),
+            ndb:add_file(#file{filename=FileName,size=Size,dirty=false}),
             success
         end,
 
