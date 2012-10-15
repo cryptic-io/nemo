@@ -5,11 +5,10 @@
 -compile(export_all).
 
 pipe(Socket,FileName) ->
-    case byte_size(FileName) < 2 of
-    true -> {error,filename_too_small};
-    false ->
-        FullPath = ?MODULE:full_path(FileName),
-        try file:sendfile(FullPath,Socket) of
+    case ?MODULE:full_path(FileName) of
+    {error,E} -> {error,E};
+    FullName ->
+        try file:sendfile(FullName,Socket) of
         {ok,_} -> success;
         {error,_} -> {error,file_error}
         catch
@@ -18,17 +17,25 @@ pipe(Socket,FileName) ->
     end.
 
 size(FileName) ->
-    case file:read_file_info(?MODULE:full_path(FileName)) of
-    {ok, FileInfo} -> FileInfo#file_info.size;
-    {error,enoent} -> {error,file_dne};
-    {error,E}      -> {error,E}
+    case ?MODULE:full_path(FileName) of
+    {error,E} -> {error,E};
+    FullName ->
+        case file:read_file_info(FullName) of
+        {ok, FileInfo} -> FileInfo#file_info.size;
+        {error,enoent} -> {error,file_dne};
+        {error,E}      -> {error,E}
+        end
     end.
 
 exists(FileName) ->
-    filelib:is_file(?MODULE:full_path(FileName)).
+    case ?MODULE:full_path(FileName) of
+    {error,_} -> false;
+    FullName  -> filelib:is_file(FullName)
+    end.
 
 full_path(<<A,B,_/binary>> = FileName) ->
-    <<?FILE_LOCATION/binary,A,$/,B,$/,FileName/binary>>.
+    <<?FILE_LOCATION/binary,A,$/,B,$/,FileName/binary>>;
+full_path(_) -> {error,filename_is_bad_and_you_should_feel_bad}.
 
 %Performs Fun on each file in under ?FILE_LOCATION, where the
 %param passed into fun is the name of the file (not full path)
