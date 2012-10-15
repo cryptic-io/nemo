@@ -10,8 +10,11 @@
 
 -define(LOOP_TIMEOUT,60000).
 
-add_file(FileName) -> gen_server:call(nemo_nfs,{add_file,FileName}).
-exists(FileName)   -> gen_server:call(nemo_nfs,{exists,  FileName}).
+add_file(FileName)       -> gen_server:call(nemo_nfs,{add_file,FileName,false}).
+add_file_dirty(FileName) -> gen_server:call(nemo_nfs,{add_file,FileName,true}).
+exists(FileName)         -> gen_server:call(nemo_nfs,{exists,  FileName}).
+reserve_file()           -> gen_server:call(nemo_nfs,reserve_file).
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% gen_server
@@ -20,12 +23,12 @@ exists(FileName)   -> gen_server:call(nemo_nfs,{exists,  FileName}).
 start() -> gen_server:start_link({local,nemo_nfs},?MODULE,'_',[]).
 init(_) -> {ok,'_',?LOOP_TIMEOUT}.
 
-handle_call({add_file,FileName},_From,S) ->
+handle_call({add_file,FileName,Dirty},_From,S) ->
     Ret = 
         case nfile:size(FileName) of
         {error,E} -> {error,E};
         Size      -> 
-            ndb:add_file(#file{filename=FileName,size=Size,dirty=false}),
+            ndb:add_file(#file{filename=FileName,size=Size,dirty=Dirty}),
             success
         end,
 
@@ -33,6 +36,10 @@ handle_call({add_file,FileName},_From,S) ->
 
 handle_call({exists,FileName},_From,S) ->
     {reply, ndb:file_exists(FileName), S, ?LOOP_TIMEOUT};
+
+%Returns a name that doesn't yet exist
+handle_call(reserve_file,_From,S) ->
+    {reply, ndb:reserve_file(), S, ?LOOP_TIMEOUT};
 
 handle_call(Wut,From,S) ->
     error_logger:error_msg("nfs got call ~w from ~w\n",[Wut,From]),

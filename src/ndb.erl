@@ -21,6 +21,7 @@ delete_key(Key)       -> ndb:call({deletekey,Key}).
 get_file_for_key(Key) -> ndb:call({getfileforkey,Key}).
 add_file(FileRec)     -> ndb:call({addfile,FileRec}).
 file_exists(FileName) -> ndb:call({fileexists,FileName}).
+reserve_file()        -> ndb:call(reserve_file).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Carrying out calls
@@ -45,6 +46,25 @@ perform_call({fileexists,FileName}) ->
     case ?MODULE:select_full(file,FileName) of
     empty -> false;
     _     -> true
+    end;
+
+perform_call(reserve_file) ->
+    {atomic,F} = mnesia:transaction(fun() ->
+        FileName = ?MODULE:get_unique_name(),
+        File = #file{filename=FileName,
+                     size=0,
+                     dirty=true},
+        mnesia:write(File),
+        FileName
+    end),
+    F.
+
+%Returns unique filename, can only be called from within transaction
+get_unique_name() ->
+    FileName = nutil:random_string(32),
+    case mnesia:read(file,FileName) of
+    [] -> FileName;
+    _  -> ?MODULE:get_unique_name()
     end.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

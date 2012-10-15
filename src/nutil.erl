@@ -94,4 +94,11 @@ timestamp() ->
     Mega * 1000 * 1000 + Sec.
 
 
-
+-define(RANDOM_CHARS,"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890").
+-define(RANDOM_CHARS_LEN,62).
+random_string(Length) ->
+    L =lists:foldl(fun(_, Acc) ->
+                        [lists:nth(random:uniform(?RANDOM_CHARS_LEN), ?RANDOM_CHARS)]
+                            ++ Acc
+                end, [], lists:seq(1, Length)),
+    list_to_binary(L).

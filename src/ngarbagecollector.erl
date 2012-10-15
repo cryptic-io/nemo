@@ -15,7 +15,7 @@
                         nutil:timestamp() - R#filekey.ts =< ?FILEKEY_TTL
                     end},
     {file,          fun(R) ->
-                        nfile:exists(R#file.filename)
+                        nfile:exists(R#file.filename) or R#file.dirty
                     end}
 ]).
 

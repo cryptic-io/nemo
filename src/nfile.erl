@@ -27,6 +27,9 @@ size(FileName) ->
         end
     end.
 
+%Checks if the file physically exists on this box, not
+%if it exists somewhere in lala land (which is what nfs:exists
+%checks)
 exists(FileName) ->
     case ?MODULE:full_path(FileName) of
     {error,_} -> false;

@@ -7,6 +7,7 @@ command_dispatch(Command,Struct,S) ->
     case {S#conn_state.sudo,Command} of
     {true,<<"addFileKeys">>} ->  ?MODULE:command_addFileKeys(Struct,S);
     {true,<<"addFile">>}     ->  ?MODULE:command_addFile(Struct,S);
+    {true,<<"reserveFile">>} ->  ?MODULE:command_reserveFile(Struct,S);
     {true,<<"reload">>}      ->  ?MODULE:command_reload(Struct,S);
     _ ->                        {S, {error, unknown_command}}
     end.
@@ -57,6 +58,12 @@ command_addFile(Struct,S) ->
             end
         end,
     {S,Ret}.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+command_reserveFile(_Struct,S) ->
+    FileName = nfs:reserve_file(),
+    {S,{success,FileName}}.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
