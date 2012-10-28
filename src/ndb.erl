@@ -165,7 +165,7 @@ primary(R) ->
 select_all(Table) -> ?MODULE:select_all(Table, ?MODULE:first(Table) ).
 select_all(_,empty) -> done;
 select_all(Table,[F|_] = S) ->
-    lists:foreach(fun(R) -> io:fwrite("~w\n",[R]) end,S),
+    lists:foreach(fun(R) -> io:fwrite("~p\n",[R]) end,S),
     ?MODULE:select_all( Table,?MODULE:next(Table,F) ); 
 select_all(_,[]) -> done;
 select_all(Table,R) ->
