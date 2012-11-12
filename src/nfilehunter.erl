@@ -47,5 +47,5 @@ terminate(_,_) -> oh_noooo.
 
 loop() ->
     nfile:foreach_file(fun(Filename) -> 
-        nfs:add_file(Filename)
+        nfs:add_whole_file(Filename)
     end).

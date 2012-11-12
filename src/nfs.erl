@@ -10,10 +10,9 @@
 
 -define(LOOP_TIMEOUT,60000).
 
-add_file(FileName)       -> gen_server:call(nemo_nfs,{add_file,FileName,false}).
-add_file_dirty(FileName) -> gen_server:call(nemo_nfs,{add_file,FileName,true}).
-exists(FileName)         -> gen_server:call(nemo_nfs,{exists,  FileName}).
-reserve_file()           -> gen_server:call(nemo_nfs,reserve_file).
+add_whole_file(FileName)       -> gen_server:call(nemo_nfs,{add_file,FileName,whole}).
+exists(FileName)               -> gen_server:call(nemo_nfs,{exists,  FileName}).
+reserve_file()                 -> gen_server:call(nemo_nfs,reserve_file).
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -23,12 +22,12 @@ reserve_file()           -> gen_server:call(nemo_nfs,reserve_file).
 start() -> gen_server:start_link({local,nemo_nfs},?MODULE,'_',[]).
 init(_) -> {ok,'_',?LOOP_TIMEOUT}.
 
-handle_call({add_file,FileName,Dirty},_From,S) ->
+handle_call({add_file,FileName,Status},_From,S) ->
     Ret = 
         case nfile:size(FileName) of
         {error,E} -> {error,E};
         Size      -> 
-            ndb:add_file(#file{filename=FileName,size=Size,dirty=Dirty}),
+            ndb:add_file(#file{filename=FileName,size=Size,status=Status}),
             success
         end,
 

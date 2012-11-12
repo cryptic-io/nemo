@@ -53,7 +53,7 @@ perform_call(reserve_file) ->
         FileName = ?MODULE:get_unique_name(),
         File = #file{filename=FileName,
                      size=0,
-                     dirty=true},
+                     status=reserved},
         mnesia:write(File),
         FileName
     end),
