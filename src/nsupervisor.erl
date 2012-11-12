@@ -18,7 +18,6 @@ init(_) ->
         {one_for_one, 100, 1000},
         [
             ?WORKER(ndb,[]),
-            ?WORKER(nfs,[]),
             ?WORKER(ngarbagecollector,[]),
             ?WORKER(nfilehunter,[]),
             ?SUP(nlisten_sup,[])

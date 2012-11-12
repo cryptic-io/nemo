@@ -7,11 +7,11 @@ FILES=`ls | grep -P '^[0-9]' | sort`
 
 for file in $FILES; do
     echo "Running $file"
-    R=`./$file`
+    R=`./$file 2>&1`
     if [ "$R" != "" ]; then
         echo "ERROR"
         echo $R
-        exit 1
+        exit
     fi
 done
 
