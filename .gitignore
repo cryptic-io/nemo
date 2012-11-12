@@ -4,3 +4,4 @@ erl_crash.dump
 log/*
 start.sh
 config.hrl
+tests/config.sh

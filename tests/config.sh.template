@@ -1,0 +1,6 @@
+#!/bin/sh
+
+FILE_LOCATION=/tmp/cc/
+HOST=localhost
+PUBLICPORT=8888
+PRIVATEPORT=9000
