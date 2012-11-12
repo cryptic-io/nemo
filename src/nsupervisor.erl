@@ -20,6 +20,7 @@ init(_) ->
             ?WORKER(ndb,[]),
             ?WORKER(ngarbagecollector,[]),
             ?WORKER(nfilehunter,[]),
-            ?SUP(nlisten_sup,[])
+            ?SUP(nlisten_sup,[]),
+            ?WORKER(npinger,[])
         ]
     }}.

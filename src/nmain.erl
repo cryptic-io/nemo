@@ -17,12 +17,6 @@
 start() -> spawn(?MODULE,init,[]).
 init() ->
     
-	%Save the list of remote nodes to memory
-	Nodes = ?MODULE:parse_nodes(?NODE_LIST),
-
-	%Ping all the nodes to make sure they're all connected.
-	?MODULE:ping_all(Nodes),
-
     %Starts mnesia and sets up tables
 	ok = mnesia:start(),
     {atomic,ok} = ?TABLE(filekey),
