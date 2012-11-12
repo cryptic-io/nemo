@@ -2,6 +2,6 @@ ebin/*.beam
 ebin/sasl.app
 erl_crash.dump
 log/*
-start.sh
-config.hrl
+start*.sh
+config*.hrl
 support/tests/config.sh
