@@ -20,8 +20,20 @@ add_whole_file(FileName) ->
         success
     end.
 
-exists(FileName) ->
+exists_locally(FileName) ->
     ndb:file_exists(FileName).
+
+exists_on_node(Node,FileName) ->
+    rpc:call(Node,?MODULE,exists_locally,[FileName]).
+
+exists_on_which_nodes(FileName) -> ?MODULE:exists_on_which_nodes(FileName,nutil:nnodes()).
+exists_on_which_nodes(FileName,Nodes) ->
+    nutil:filter_map(fun(Node) ->
+         ?MODULE:exists_on_node(Node,FileName) andalso Node
+    end,Nodes).
+
+exists_on_which_other_nodes(FileName) -> 
+    ?MODULE:exists_on_which_nodes(FileName,nutil:nnodes_sans_me()).
 
 reserve_file() ->
     ndb:reserve_file().
