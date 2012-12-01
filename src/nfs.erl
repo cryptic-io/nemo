@@ -78,6 +78,12 @@ open_r(FileName) ->
         end
     end.
 
+%retrieve_file(FileName) ->
+%    case insert_partial(FileName) of
+%    stopped -> {error,file_exists};
+%    ok      ->
+%    end.
+
 %Reserves a file and returns the reserved file's name (binary)
 reserve_file() ->
     ndb:reserve_file().

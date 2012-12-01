@@ -14,7 +14,10 @@
 %These methods act exactly the same as their counterparts in file.
 %The only exception is open, which will expand the name to the full path
 open(FileName,Opts) ->
-    gen_server:start(?MODULE,{nfile:full_path(FileName),Opts},[]).
+    case nfile:full_path(FileName) of
+    {error,E} -> {error,E};
+    FullPath  -> gen_server:start(?MODULE,{FullPath,Opts},[])
+    end.
 
 read(Nfh,Amount) ->
     gen_server:call(Nfh,{read,Amount}).
