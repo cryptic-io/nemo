@@ -57,3 +57,15 @@ foreach_file(Fun) ->
             lists:foreach(fun(File) -> Fun(list_to_binary(File)) end,Files)
         end,Dirs2)
     end,Dirs).
+
+open_r(FileName) ->
+    case file:open(full_path(FileName),[read,binary]) of
+    {error,E} -> {error,E};
+    {ok,FH}   -> FH
+    end.
+
+open_w(FileName) ->
+    case file:open(full_path(FileName),[write,binary]) of
+    {error,E} -> {error,E};
+    {ok,FH}   -> FH
+    end.
