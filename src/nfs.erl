@@ -67,6 +67,17 @@ node_where_is_whole(FileName) ->
 other_node_where_is_whole(FileName) ->
     nutil:rand_from_list(?MODULE:where_else_is_whole(FileName)).
 
+%Returns an nfh from some node (based on node_where_is_whole) for the file, or {error,E}
+open_r(FileName) ->
+    case ?MODULE:node_where_is_whole(FileName) of
+    false -> {error,filedne};
+    Node  ->
+        case rpc:call(Node,nfh,open,[FileName,[read,binary]]) of
+        {error,E} -> {error,E};
+        {ok,Nfh}  -> Nfh
+        end
+    end.
+
 %Reserves a file and returns the reserved file's name (binary)
 reserve_file() ->
     ndb:reserve_file().
