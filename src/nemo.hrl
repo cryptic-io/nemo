@@ -36,6 +36,12 @@
 }).
 
 -record(filekey,{key,filename,ts}).
+
+%status can be:
+%   whole
+%   partial
+%   reserved
+%   {todelete,TS}
 -record(file,   {filename,size,status}).
 
 %Hack to turn a record into a tuplelist

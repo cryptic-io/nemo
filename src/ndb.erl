@@ -16,16 +16,21 @@
 %%% Doing calls
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-add_key(FileName,Key) -> ndb:call({addkey,FileName,Key}).
-delete_key(Key)       -> ndb:call({deletekey,Key}).
-get_file_for_key(Key) -> ndb:call({getfileforkey,Key}).
-add_file(FileRec)     -> ndb:call({addfile,FileRec}).
-file_exists(FileName) -> ndb:call({fileexists,FileName}).
-reserve_file()        -> ndb:call(reserve_file).
+get_file(FileName)      -> ndb:call({get_file,FileName}).
+add_key(FileName,Key)   -> ndb:call({addkey,FileName,Key}).
+delete_key(Key)         -> ndb:call({deletekey,Key}).
+get_file_for_key(Key)   -> ndb:call({getfileforkey,Key}).
+add_file(FileRec)       -> ndb:call({addfile,FileRec}).
+file_exists(FileName)   -> ndb:call({fileexists,FileName}).
+file_is_whole(FileName) -> ndb:call({fileiswhole,FileName}).
+reserve_file()          -> ndb:call(reserve_file).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Carrying out calls
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+perform_call({get_file,FileName}) ->
+    ?MODULE:select_full(file,FileName);
 
 perform_call({addkey,FileName,Key}) ->
     mnesia:dirty_write(#filekey{filename=FileName,key=Key,ts=nutil:timestamp()});
@@ -43,9 +48,13 @@ perform_call({addfile,FileRec}) ->
    mnesia:dirty_write(FileRec);
 
 perform_call({fileexists,FileName}) ->
-    case ?MODULE:select_full(file,FileName) of
+    ?MODULE:perform_call({get_file,FileName}) /= empty;
+
+perform_call({fileiswhole,FileName}) ->
+    case ?MODULE:perform_call({get_file,FileName}) of
     empty -> false;
-    _     -> true
+    FileRec when FileRec#file.status == whole -> true;
+    _ -> false
     end;
 
 perform_call(reserve_file) ->
