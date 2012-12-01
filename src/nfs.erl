@@ -78,11 +78,21 @@ open_r(FileName) ->
         end
     end.
 
-%retrieve_file(FileName) ->
-%    case insert_partial(FileName) of
-%    stopped -> {error,file_exists};
-%    ok      ->
-%    end.
+%Given the filename, retrieves it from some other node and stores it here. Assumes it's not
+%already here. Returns {error,E} or success
+retrieve_file(FileName) ->
+    case ndb:insert_partial(FileName) of
+    stopped -> {error,file_exists};
+    ok      ->
+        case ?MODULE:open_r(FileName) of
+        {error,E} -> {error,E};
+        Nfh ->
+            case nfile:pipe_nfh_to_file(Nfh,FileName) of
+            {error,E} -> {error,E};
+            ok -> ?MODULE:add_whole_file(FileName)
+            end
+        end
+    end.
 
 %Reserves a file and returns the reserved file's name (binary)
 reserve_file() ->
