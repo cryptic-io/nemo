@@ -16,14 +16,19 @@
 %%% Doing calls
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-get_file(FileName)      -> ndb:call({get_file,FileName}).
-add_key(FileName,Key)   -> ndb:call({addkey,FileName,Key}).
-delete_key(Key)         -> ndb:call({deletekey,Key}).
-get_file_for_key(Key)   -> ndb:call({getfileforkey,Key}).
-add_file(FileRec)       -> ndb:call({addfile,FileRec}).
-file_exists(FileName)   -> ndb:call({fileexists,FileName}).
-file_is_whole(FileName) -> ndb:call({fileiswhole,FileName}).
-reserve_file()          -> ndb:call(reserve_file).
+get_file(FileName)           -> ndb:call({get_file,FileName}).
+add_key(FileName,Key)        -> ndb:call({addkey,FileName,Key}).
+delete_key(Key)              -> ndb:call({deletekey,Key}).
+get_file_for_key(Key)        -> ndb:call({getfileforkey,Key}).
+add_file(FileRec)            -> ndb:call({addfile,FileRec}).
+add_file_unless(FileRec,Fun) -> ndb:call({addfileunless,FileRec,Fun}).
+file_exists(FileName)        -> ndb:call({fileexists,FileName}).
+file_is_whole(FileName)      -> ndb:call({fileiswhole,FileName}).
+reserve_file()               -> ndb:call(reserve_file).
+
+insert_partial(FileName) ->
+    ?MODULE:add_file_unless(#file{filename=FileName,size=0,status=partial},
+                                  fun() -> mnesia:read(file,FileName) /= []  end).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Carrying out calls
@@ -46,6 +51,15 @@ perform_call({getfileforkey,Key}) ->
 
 perform_call({addfile,FileRec}) ->
    mnesia:dirty_write(FileRec);
+
+perform_call({addfileunless,FileRec,Fun}) ->
+    {atomic,F} = mnesia:transaction(fun() ->
+        case Fun() of
+        true -> stopped;
+        _    -> mnesia:write(FileRec)
+        end
+    end),
+    F;
 
 perform_call({fileexists,FileName}) ->
     ?MODULE:perform_call({get_file,FileName}) /= empty;
