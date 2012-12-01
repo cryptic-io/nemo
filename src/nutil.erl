@@ -93,6 +93,10 @@ timestamp() ->
     {Mega, Sec, _} = now(),
     Mega * 1000 * 1000 + Sec.
 
+rand_from_list([]) -> false;
+rand_from_list(List) ->
+    Index = random:uniform(length(List)), 
+    lists:nth(Index, List).
 
 -define(RANDOM_CHARS,"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890").
 -define(RANDOM_CHARS_LEN,62).
