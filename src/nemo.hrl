@@ -1,4 +1,6 @@
--include("../config.hrl").
+%This is included from ccetc, support/include.mk handles figuring out
+%where ccetc actually is
+-include("nemo_config.hrl").
 
 %Used for code reloading, doesn't matter much other then that
 -define(MODULE_LIST, [
