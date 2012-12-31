@@ -9,6 +9,7 @@
     mochijson2,
     nconnection,
     ndb,
+    ndistribute,
     nfile,
     nfs,
     ngarbagecollector,
@@ -38,6 +39,9 @@
 }).
 
 -record(filekey,{key,filename,ts}).
+
+-record(nodeprio,{node,priority}).
+-record(nodedist,{i,nodeprios=[]}).
 
 %status can be:
 %   whole

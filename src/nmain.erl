@@ -21,6 +21,7 @@ init() ->
 	ok = mnesia:start(),
     {atomic,ok} = ?TABLE(filekey),
     {atomic,ok} = ?TABLE(file),
+    {atomic,ok} = ?TABLE(nodedist),
 
 
     %Hopefully force mnesia to actually pick up its garbage

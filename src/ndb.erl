@@ -25,6 +25,9 @@ add_file_unless(FileRec,Fun) -> ndb:call({addfileunless,FileRec,Fun}).
 file_exists(FileName)        -> ndb:call({fileexists,FileName}).
 file_is_whole(FileName)      -> ndb:call({fileiswhole,FileName}).
 reserve_file()               -> ndb:call(reserve_file).
+set_nodedist(I,L)            -> mnesia:dirty_write(#nodedist{i=I,nodeprios=L}).
+get_nodedist(I)              -> ?MODULE:select_full(nodedist,I).
+remove_from_nodedists(Node)  -> ndb:call({remove_from_nodedists,Node}).
 
 insert_partial(FileName) ->
     ?MODULE:add_file_unless(#file{filename=FileName,size=0,status=partial},
@@ -79,6 +82,22 @@ perform_call(reserve_file) ->
                      status=reserved},
         mnesia:write(File),
         FileName
+    end),
+    F;
+
+perform_call({remove_from_nodedists,Node}) ->
+    {atomic,F} = mnesia:transaction(fun() ->
+        lists:foreach(
+            fun(I) ->
+                [NodeDist] = mnesia:read(nodedist,I),
+                NewNodePrios = lists:filter(
+                                fun(NodePrio) -> NodePrio#nodeprio.node /= Node end,
+                                NodeDist#nodedist.nodeprios
+                               ),
+                mnesia:write(NodeDist#nodedist{nodeprios=NewNodePrios})
+            end,
+            lists:seq(0,99)
+        )
     end),
     F.
 
