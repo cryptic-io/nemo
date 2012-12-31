@@ -21,6 +21,7 @@ init(_) ->
             ?WORKER(ngarbagecollector,[]),
             ?WORKER(nfilehunter,[]),
             ?SUP(nlisten_sup,[]),
-            ?WORKER(npinger,[])
+            ?WORKER(npinger,[]),
+            ?WORKER(nnodemon,[?PRIORITY,?RANGE])
         ]
     }}.

@@ -17,8 +17,6 @@
 start() -> spawn(?MODULE,init,[]).
 init() ->
 
-    ?MODULE:ping_all( [X || X <- ?NODE_LIST, X /= node()] ),
-    
     %Starts mnesia and sets up tables
 	ok = mnesia:start(),
     {atomic,ok} = ?TABLE(filekey),
@@ -41,21 +39,3 @@ init() ->
     %Hack to keep the supervisor alive
     error_logger:info_msg("Nemo started\n"),
     timer:sleep(infinity).
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%% Utility
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-%Pings every node in a list of nodes
-ping_all(Nodes) ->
-    lists:foreach(
-        fun(Node) ->
-            error_logger:info_msg("Pinging ~w\n",[Node]),
-            error_logger:info_msg("Got ~w from ~w\n",[net_adm:ping(Node),Node])
-        end,
-        Nodes).
-
-
-
-
-

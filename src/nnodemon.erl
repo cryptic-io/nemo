@@ -16,21 +16,25 @@ start(Priority,Range) -> gen_server:start_link({local,nemo_nnodemon},?MODULE,{Pr
 get_priority_range(Node) ->
     gen_server:call({nemo_nnodemon,Node},get_priority_range).
 
+apply_priority_range(Node,Priority,Range) ->
+    gen_server:cast({nemo_nnodemon,Node},{apply_priority_range,node(),Priority,Range}).
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 init({Priority,Range}) -> 
-    
+
     %Initialize nodedist table to blank, then add self
     ndistribute:init_nodedist(),
     ndistribute:add_to_nodedists(node(),Priority,Range),
 
-    %Add all connected nodes
+    %Add all connected nodes, and tell them about us
     lists:foreach(
         fun(Node) ->
             {P,R} = ?MODULE:get_priority_range(Node),
-            ndistribute:add_to_nodedists(Node,P,R)
+            ndistribute:add_to_nodedists(Node,P,R),             %Add them to us
+            ?MODULE:apply_priority_range(Node,Priority,Range)   %Add us to them
         end,
-        ntuil:nnodes_sans_me()
+        nutil:nnodes_sans_me()
     ),
     
     {ok,#state{priority=Priority,range=Range},?LOOP_TIMEOUT}.
@@ -41,6 +45,11 @@ handle_call(get_priority_range,_,#state{priority=P,range=R} = S) ->
 handle_call(Wut,From,S) ->
     error_logger:error_msg("nnodemon got call ~w from ~w\n",[Wut,From]),
     {noreply,S,?LOOP_TIMEOUT}.
+
+handle_cast({apply_priority_range,N,P,R},S) ->
+    ndistribute:remove_from_nodedists(N),
+    ndistribute:add_to_nodedists(N,P,R),
+    {noreply,S,?LOOP_TIMEOUT};
 
 handle_cast(Wut,S) ->
     error_logger:error_msg("nnodemon got cast ~w\n",[Wut]),
