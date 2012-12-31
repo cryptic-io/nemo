@@ -28,6 +28,7 @@ reserve_file()               -> ?MODULE:call(reserve_file).
 set_nodedist(I,L)            -> mnesia:dirty_write(#nodedist{i=I,nodeprios=L}).
 get_nodedist(I)              -> ?MODULE:select_full(nodedist,I).
 remove_from_nodedists(Node)  -> ?MODULE:call({remove_from_nodedists,Node}).
+dump_nodedists()             -> ?MODULE:call(dump_nodedists).
 
 insert_partial(FileName) ->
     ?MODULE:add_file_unless(#file{filename=FileName,size=0,status=partial},
@@ -99,7 +100,13 @@ perform_call({remove_from_nodedists,Node}) ->
             lists:seq(0,99)
         )
     end),
-    F.
+    F;
+
+perform_call(dump_nodedists) ->
+    lists:map(
+        fun(I) -> ?MODULE:select_full(nodedist,I) end,
+        lists:seq(0,99)
+    ).
 
 %Returns unique filename, can only be called from within transaction
 get_unique_name() ->

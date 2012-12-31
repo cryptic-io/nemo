@@ -16,6 +16,7 @@
     nlisten,
     nlisten_sup,
     nmain,
+    nnodemon,
     nprivatehandler,
     npublichandler,
     nrpc,

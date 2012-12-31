@@ -48,3 +48,35 @@ nodes_for_file(FileName) ->
     I = ?MODULE:hash(FileName),
     #nodedist{nodeprios=L} = ndb:get_nodedist(I),
     lists:map(fun(N) -> N#nodeprio.node end,L).
+
+nodedists_summary() ->
+    Dump = ndb:dump_nodedists(),
+    
+    %Takes the dump of nodedists and turns it into a list of form:
+    %[{Node, Priority, ListOfI's}|...], where ListOfI's is a list
+    %of all the indexes (from 0-99) this node appears in
+    Compiled = lists:foldl(
+        fun(#nodedist{i=I,nodeprios=NodePrios},L) ->
+            lists:foldl(
+                fun(#nodeprio{node=N,priority=P},Li) ->
+                    case lists:keyfind(N,1,Li) of
+                    false       -> [{N,P,[I]}|Li];
+                    {N,P,IList} -> lists:keystore(N,1,Li,{N,P,[I|IList]})
+                    end
+                end,
+                L,
+                NodePrios
+            )
+        end,
+        [],
+        Dump
+    ),
+
+    %Takes all the ListOfI's and turns them into a range
+    lists:map(
+        fun({N,P,IList}) ->
+            R = {lists:last(IList),lists:nth(1,IList)},
+            {N,P,R}
+        end,
+        Compiled
+    ).

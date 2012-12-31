@@ -9,38 +9,43 @@
          handle_info/2,terminate/2,code_change/3]).
 
 -define(LOOP_TIMEOUT,60000).
--record(state,{priority,range}).
 
-start(Priority,Range) -> gen_server:start_link({local,nemo_nnodemon},?MODULE,{Priority,Range},[]).
+start() -> gen_server:start_link({local,nemo_nnodemon},?MODULE,'_',[]).
 
-get_priority_range(Node) ->
-    gen_server:call({nemo_nnodemon,Node},get_priority_range).
+apply_priority_range(Node,NodeToApply,Priority,Range) ->
+    gen_server:cast({nemo_nnodemon,Node},{apply_priority_range,NodeToApply,Priority,Range}).
 
-apply_priority_range(Node,Priority,Range) ->
-    gen_server:cast({nemo_nnodemon,Node},{apply_priority_range,node(),Priority,Range}).
+remove_from_pool(Node,NodeToRemove) ->
+    gen_server:cast({nemo_nnodemon,Node},{remove_from_pool,NodeToRemove}).
+
+node_summary(Node) ->
+    gen_server:call({nemo_nnodemon,Node},node_summary).
+
+broadcast_apply(Node,Priority,Range) ->
+    gen_server:cast({nemo_nnodemon,node()},{broadcast_apply,Node,Priority,Range}).
+
+broadcast_remove(Node) ->
+    gen_server:cast({nemo_nnodemon,node()},{broadcast_remove,Node}).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-init({Priority,Range}) -> 
+init(_) -> 
 
-    %Initialize nodedist table to blank, then add self
     ndistribute:init_nodedist(),
-    ndistribute:add_to_nodedists(node(),Priority,Range),
+    case nutil:nnodes_sans_me() of
+    [] -> oh_well;
+    [Node|_] -> %TODO Should probably do some checking to make sure all node's summaries are correct
+        Summary = ?MODULE:node_summary(Node),
+        lists:foreach(
+            fun({N,P,R}) -> ndistribute:add_to_nodedists(N,P,R) end,
+            Summary
+        )
+    end,
 
-    %Add all connected nodes, and tell them about us
-    lists:foreach(
-        fun(Node) ->
-            {P,R} = ?MODULE:get_priority_range(Node),
-            ndistribute:add_to_nodedists(Node,P,R),             %Add them to us
-            ?MODULE:apply_priority_range(Node,Priority,Range)   %Add us to them
-        end,
-        nutil:nnodes_sans_me()
-    ),
-    
-    {ok,#state{priority=Priority,range=Range},?LOOP_TIMEOUT}.
+    {ok,'_',?LOOP_TIMEOUT}.
 
-handle_call(get_priority_range,_,#state{priority=P,range=R} = S) ->
-    {reply,{P,R},S,?LOOP_TIMEOUT};
+handle_call(node_summary,_,S) ->
+    {reply,ndistribute:nodedists_summary(),S,?LOOP_TIMEOUT};
 
 handle_call(Wut,From,S) ->
     error_logger:error_msg("nnodemon got call ~w from ~w\n",[Wut,From]),
@@ -50,6 +55,24 @@ handle_cast({apply_priority_range,N,P,R},S) ->
     ndistribute:remove_from_nodedists(N),
     ndistribute:add_to_nodedists(N,P,R),
     {noreply,S,?LOOP_TIMEOUT};
+
+handle_cast({remove_from_pool,N},S) ->
+    ndistribute:remove_from_nodedists(N),
+    {noreply,S,?LOOP_TIMEOUT};
+
+handle_cast({broadcast_apply,N,P,R},S) ->
+    lists:foreach(
+        fun(Node) -> ?MODULE:apply_priority_range(Node,N,P,R) end,
+        nutil:nnodes_sans_me()
+    ),
+    ?MODULE:handle_cast({apply_priority_range,N,P,R},S);
+
+handle_cast({broadcast_remove,N},S) ->
+    lists:foreach(
+        fun(Node) -> ?MODULE:remove_from_pool(Node,N) end,
+        nutil:nnodes_sans_me()
+    ),
+    ?MODULE:handle_cast({remove_from_pool,N},S);
 
 handle_cast(Wut,S) ->
     error_logger:error_msg("nnodemon got cast ~w\n",[Wut]),

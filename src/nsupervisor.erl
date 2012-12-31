@@ -22,6 +22,6 @@ init(_) ->
             ?WORKER(nfilehunter,[]),
             ?SUP(nlisten_sup,[]),
             ?WORKER(npinger,[]),
-            ?WORKER(nnodemon,[?PRIORITY,?RANGE])
+            ?WORKER(nnodemon,[])
         ]
     }}.
