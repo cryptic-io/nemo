@@ -16,6 +16,8 @@
 
 start() -> spawn(?MODULE,init,[]).
 init() ->
+
+    ?MODULE:ping_all( [X || X <- ?NODE_LIST, X /= node()] ),
     
     %Starts mnesia and sets up tables
 	ok = mnesia:start(),
@@ -44,23 +46,14 @@ init() ->
 %%% Utility
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-
-%Parses the node list and returns one not containing this node. This is so that
-%each node doesn't need a different node list and code can be constant throughout
-parse_nodes(Nodes) -> ?MODULE:parse_nodes(node(),Nodes,[]).
-parse_nodes(_,[],Parsed) -> Parsed;
-parse_nodes(This,[N|Unparsed],Parsed) ->
-	case N of
-	This -> ?MODULE:parse_nodes(This,Unparsed,Parsed);
-	_ -> ?MODULE:parse_nodes(This,Unparsed,[N|Parsed])
-	end.
-
 %Pings every node in a list of nodes
-ping_all([]) -> ok;
-ping_all([Node|L]) ->
-    io:fwrite("Pinging ~w..... ",[Node]),
-	io:fwrite("~w\n",[net_adm:ping(Node)]),
-	?MODULE:ping_all(L).
+ping_all(Nodes) ->
+    lists:foreach(
+        fun(Node) ->
+            error_logger:info_msg("Pinging ~w\n",[Node]),
+            error_logger:info_msg("Got ~w from ~w\n",[net_adm:ping(Node),Node])
+        end,
+        Nodes).
 
 
 
