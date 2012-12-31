@@ -14,7 +14,7 @@
 %        MetaList = [MetaObj]
 %        MetaObj = {Key,MetaData}
 %        MetaData = {MetaType,Default,Return}
-%        MetaType = binary | bool | int | list | {list, Pred} | struct
+%        MetaType = binary | bool | int | float | list | {list, Pred} | struct
 %        Pred = fun((Elem :: Value) -> boolean())
 %        Default = term() | required
 %        Return = bool()
@@ -59,6 +59,11 @@ process_value(_,bool) -> {error,not_bool};
 %Check int
 process_value(Value,int) when is_integer(Value) -> Value;
 process_value(_,int) -> {error,not_int};
+
+%Check float
+process_value(Value,float) when is_integer(Value) -> float(Value);
+process_value(Value,float) when is_float(Value) -> Value;
+process_value(_,int) -> {error,not_float};
 
 %Check list
 process_value(Value,list) when is_list(Value) -> Value;

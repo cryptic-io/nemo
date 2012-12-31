@@ -5,10 +5,12 @@
 
 command_dispatch(Command,Struct,S) ->
     case {S#conn_state.sudo,Command} of
-    {true,<<"addFileKeys">>} ->  ?MODULE:command_addFileKeys(Struct,S);
-    {true,<<"addFile">>}     ->  ?MODULE:command_addFile(Struct,S);
-    {true,<<"reserveFile">>} ->  ?MODULE:command_reserveFile(Struct,S);
-    {true,<<"reload">>}      ->  ?MODULE:command_reload(Struct,S);
+    {true,<<"addFileKeys">>}     -> ?MODULE:command_addFileKeys(Struct,S);
+    {true,<<"addFile">>}         -> ?MODULE:command_addFile(Struct,S);
+    {true,<<"reserveFile">>}     -> ?MODULE:command_reserveFile(Struct,S);
+    {true,<<"reload">>}          -> ?MODULE:command_reload(Struct,S);
+    {true,<<"applyNodeChange">>} -> ?MODULE:command_applyNodeChange(Struct,S);
+    {true,<<"removeNode">>}      -> ?MODULE:command_removeNode(Struct,S);
     _ ->                        {S, {error, unknown_command}}
     end.
 
@@ -70,3 +72,52 @@ command_reserveFile(_Struct,S) ->
 command_reload(_,S) ->
     ndev:reload_all(),
     {S,{success,<<"reload">>}}.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+-define(APPLYNODECHANGE_EXTRACT,[
+                                    {<<"node">>,{binary,required}},
+                                    {<<"priority">>,{float,required}},
+                                    {<<"rangeStart">>,{int,required}},
+                                    {<<"rangeEnd">>,{int,required}}
+                                ]).
+command_applyNodeChange(Struct,S) ->
+    Ret =
+        case nrpc:extract(Struct,?APPLYNODECHANGE_EXTRACT) of
+        {error,Error,Extra} -> {error,Error,Extra};
+        [{_,End},{_,Start},{_,Priority},{_,NodeStr}] ->
+            try binary_to_existing_atom(NodeStr,utf8) of
+            Node ->
+                case lists:member(Node,?NODE_LIST) of
+                true  -> 
+                    nnodemon:broadcast_apply(Node,Priority,{Start,End}),
+                    {success,<<"applyNodeChange">>};
+                false -> {error,node_dne}
+                end
+            catch _:_ -> {error,node_dne}
+            end
+        end,
+    {S,Ret}.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+-define(REMOVENODE_EXTRACT,[
+                                {<<"node">>,{binary,required}}
+                           ]).
+command_removeNode(Struct,S) ->
+    Ret =
+        case nrpc:extract(Struct,?REMOVENODE_EXTRACT) of
+        {error,Error,Extra} -> {error,Error,Extra};
+        [{_,NodeStr}] ->
+            try binary_to_existing_atom(NodeStr,utf8) of
+            Node ->
+                case lists:member(Node,?NODE_LIST) of
+                true  -> 
+                    nnodemon:broadcast_remove(Node),
+                    {success,<<"removeNode">>};
+                false -> {error,node_dne}
+                end
+            catch _:_ -> {error,node_dne}
+            end
+        end,
+    {S,Ret}.
