@@ -23,13 +23,13 @@ remove_from_nodedists(Node) ->
     ndb:remove_from_nodedists(Node).
 
 %Adds Node with Priority to nodedist table in given range
-add_to_nodedists(Start,End,Node,Priority) ->
+add_to_nodedists(Node,Priority,{Start,End} = _Range) ->
     lists:foreach(
-        fun(I) -> ?MODULE:add_to_nodedist(I,Node,Priority) end,
+        fun(I) -> ?MODULE:add_to_nodedist(Node,Priority,I) end,
         lists:seq(Start,End)
     ).
 
-add_to_nodedist(I,Node,Priority) ->
+add_to_nodedist(Node,Priority,I) ->
     #nodedist{nodeprios=NodePrios} = ndb:get_nodedist(I),
     NewNodePrio  = #nodeprio{node=Node,priority=Priority},
     NewNodePrios = insert_by_prio(NodePrios,NewNodePrio),
