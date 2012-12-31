@@ -16,18 +16,18 @@
 %%% Doing calls
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-get_file(FileName)           -> ndb:call({get_file,FileName}).
-add_key(FileName,Key)        -> ndb:call({addkey,FileName,Key}).
-delete_key(Key)              -> ndb:call({deletekey,Key}).
-get_file_for_key(Key)        -> ndb:call({getfileforkey,Key}).
-add_file(FileRec)            -> ndb:call({addfile,FileRec}).
-add_file_unless(FileRec,Fun) -> ndb:call({addfileunless,FileRec,Fun}).
-file_exists(FileName)        -> ndb:call({fileexists,FileName}).
-file_is_whole(FileName)      -> ndb:call({fileiswhole,FileName}).
-reserve_file()               -> ndb:call(reserve_file).
+get_file(FileName)           -> ?MODULE:call({get_file,FileName}).
+add_key(FileName,Key)        -> ?MODULE:call({addkey,FileName,Key}).
+delete_key(Key)              -> ?MODULE:call({deletekey,Key}).
+get_file_for_key(Key)        -> ?MODULE:call({getfileforkey,Key}).
+add_file(FileRec)            -> ?MODULE:call({addfile,FileRec}).
+add_file_unless(FileRec,Fun) -> ?MODULE:call({addfileunless,FileRec,Fun}).
+file_exists(FileName)        -> ?MODULE:call({fileexists,FileName}).
+file_is_whole(FileName)      -> ?MODULE:call({fileiswhole,FileName}).
+reserve_file()               -> ?MODULE:call(reserve_file).
 set_nodedist(I,L)            -> mnesia:dirty_write(#nodedist{i=I,nodeprios=L}).
 get_nodedist(I)              -> ?MODULE:select_full(nodedist,I).
-remove_from_nodedists(Node)  -> ndb:call({remove_from_nodedists,Node}).
+remove_from_nodedists(Node)  -> ?MODULE:call({remove_from_nodedists,Node}).
 
 insert_partial(FileName) ->
     ?MODULE:add_file_unless(#file{filename=FileName,size=0,status=partial},
