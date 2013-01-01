@@ -11,6 +11,7 @@ command_dispatch(Command,Struct,S) ->
     {true,<<"reload">>}          -> ?MODULE:command_reload(Struct,S);
     {true,<<"applyNodeChange">>} -> ?MODULE:command_applyNodeChange(Struct,S);
     {true,<<"removeNode">>}      -> ?MODULE:command_removeNode(Struct,S);
+    {true,<<"topologySummary">>} -> ?MODULE:command_topologySummary(Struct,S);
     _ ->                        {S, {error, unknown_command}}
     end.
 
@@ -121,3 +122,32 @@ command_removeNode(Struct,S) ->
             end
         end,
     {S,Ret}.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+command_topologySummary(_,S) ->
+    Summary = ndistribute:nodedists_summary(),
+
+    %Add nodes which aren't in the pool to the summary. FullSummary
+    %is a list where elements are either {Node,Priority,Range} (in pool)
+    %or just Node (not in pool)
+    FullSummary = lists:foldl(
+        fun(Node,L) ->
+            case lists:keyfind(Node,1,L) of
+            false -> [Node|L];
+            _     -> L
+            end
+        end,
+        Summary,
+        nutil:nnodes()
+    ),
+
+    FullSummaryJson = lists:map(
+        fun
+        ({N,P,{St,E}}) -> [{node,N},{inpool,true},{priority,P},{rangeStart,St},{rangeEnd,E}];
+        (N) -> [{node,N},{inpool,false}]
+        end,
+        FullSummary
+    ),
+
+    {S,{return,FullSummaryJson}}.

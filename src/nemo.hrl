@@ -7,6 +7,7 @@
     gen_pool,
     gen_pool_child,
     mochijson2,
+    mochinum,
     nconnection,
     ndb,
     ndistribute,
