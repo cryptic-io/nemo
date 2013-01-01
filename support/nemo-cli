@@ -1,0 +1,87 @@
+#!/usr/bin/env python2
+
+import sys
+import argparse
+import pycurl
+import json
+
+def main():
+    parser = argparse.ArgumentParser(description="A cli helper tool for managing nemo clusters",epilog="nemo-cli requires pycurl to work, and has only been tested on python2.7. It oughta work on 3.x, but I don't promise anything")
+    parser.add_argument("-H","--host",default="localhost",help="Host nemo is running on (default: localhost)")
+    parser.add_argument("-p","--port",default="9000",help="Port number of nemo's private interface (default: 9000)")
+    
+    sp = parser.add_subparsers(dest='command')
+    
+    sp_top = sp.add_parser('topology', help="(default) Prints out the current nemo cluster's topology")
+    
+    sp_app = sp.add_parser('apply', help="Adds a node to the pool, or changes its existing configuration")
+    sp_app.add_argument("node",metavar="<nodename>",help="Name of node")
+    sp_app.add_argument("priority",metavar="<priority>",help="Priority you want to give to the node (should be a number, higher number = higher priority)")
+    sp_app.add_argument("start",metavar="<range start>",help="Beginning number of the range you want this nemo node to handle (inclusive)")
+    sp_app.add_argument("end",metavar="<range end>",help="Ending number of the range you want this nemo node to handle (inclusive)")
+    
+    sp_rem = sp.add_parser('remove', help="Removes a node from the pool")
+    sp_rem.add_argument("node",metavar="<nodename>",help="Name of node")
+    
+    if (len(sys.argv) < 2):
+        args = parser.parse_args(['topology'])
+    else:
+        args = parser.parse_args(sys.argv[1:])
+
+    args = vars(args)
+
+    if args["command"] == "topology":
+        topology(args)
+    elif args["command"] == "apply":
+        apply_node(args)
+    else:
+        remove_node(args)
+
+def nemo_curl(args,post_data):
+
+    class Buf(object):
+        def __init__(self):
+            self.buf=''
+        def body_callback(self,d):
+            self.buf+=d
+
+    b = Buf()
+    c = pycurl.Curl()
+    c.setopt(pycurl.URL, 'http://{0}:{1}'.format(args["host"],args["port"]))
+    c.setopt(pycurl.HTTPHEADER, ['Accept: application/json'])
+    c.setopt(pycurl.HTTPHEADER, ['Content-Type : application/x-www-form-urlencoded'])
+    c.setopt(pycurl.POST, 1)
+    c.setopt(pycurl.POSTFIELDS, post_data)
+    c.setopt(c.WRITEFUNCTION, b.body_callback)
+    c.perform()
+    c.close()
+
+    j = json.loads(b.buf[:-1])
+    if j.get("error",False):
+        print("There was an error: {0}".format(j["error"]))
+        sys.exit(1)
+    else:
+        return j
+
+def topology(args):
+    top_json = nemo_curl(args,"{\"command\":\"topologySummary\",\"meta\":{\"http\":true}}\n")["return"]
+    print("{0:<20}{1:<10}{2:<10}{3:<10}".format("Node","In Pool?","Priority","Range"))
+    print("-"*50)
+    for node in top_json:
+        if node["inpool"]:
+            print("{0:<20}{1:<10}{2:<10}{3:<10}".format(node["node"],"true",node["priority"],str(node["rangeStart"])+"-"+str(node["rangeEnd"])))
+        else:
+            print("{0:<20}{1:<10}".format(node["node"],"false"))
+
+def apply_node(args):
+    float(args["priority"])
+    int(args["start"])
+    int(args["end"])
+    app_ret = nemo_curl(args,"{\"command\":\"applyNodeChange\",\"node\":\""+args["node"]+"\",\"priority\":"+args["priority"]+",\"rangeStart\":"+args["start"]+",\"rangeEnd\":"+args["end"]+",\"meta\":{\"http\":true}}\n")
+    print("Change applied successfully")
+
+def remove_node(args):
+    rem_ret = nemo_curl(args,"{\"command\":\"removeNode\",\"node\":\""+args["node"]+"\",\"meta\":{\"http\":true}}\n")
+    print("Node removed successfully")
+
+main()

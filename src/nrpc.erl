@@ -63,7 +63,7 @@ process_value(_,int) -> {error,not_int};
 %Check float
 process_value(Value,float) when is_integer(Value) -> float(Value);
 process_value(Value,float) when is_float(Value) -> Value;
-process_value(_,int) -> {error,not_float};
+process_value(_,float) -> {error,not_float};
 
 %Check list
 process_value(Value,list) when is_list(Value) -> Value;
