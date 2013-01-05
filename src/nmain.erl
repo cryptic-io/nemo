@@ -34,5 +34,5 @@ init() ->
     nsupervisor:start(),
 
     %Hack to keep the supervisor alive
-    error_logger:info_msg("Nemo started\n"),
+    error_logger:info_msg("Nemo started"),
     timer:sleep(infinity).
