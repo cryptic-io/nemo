@@ -17,7 +17,7 @@ NODE_NAME='nemo@127.0.0.1'
 COOKIE='deadmau5 is extremely overrated'
 
 if [ "$1" == "-detached" ]; then
-DETACHED="-detached"
+DETACHED="-noshell"
 fi
 
 #For production use /root, forces nemo to run as root
