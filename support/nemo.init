@@ -1,0 +1,78 @@
+#!/bin/sh
+#
+# nemo: Start/stop nemo file server
+#
+# chkconfig: 2345 85 15 
+# description: Nemo file server
+#
+#
+
+
+# Source function library
+. /etc/rc.d/init.d/functions
+
+#erlexec needs home to be set
+export HOME=/root
+
+NEMO_PATH=/opt/cc/nemo
+PIDFILE=/var/run/nemo.pid
+
+RUNNING=`ps aux | grep "$(cat $PIDFILE 2>/dev/null)" | grep -v grep`
+if [ -e $PIDFILE -a "$RUNNING" != "" ]; then
+    ISRUNNING="1"
+else
+    ISRUNNING=""
+fi
+
+case "$1" in
+    start)
+        ulimit -HSn 999999
+        if [ $ISRUNNING ]; then
+            echo -n "Nemo already started"
+            failure
+            echo ""
+        else
+            echo -n "Starting Nemo......"
+            $NEMO_PATH/start.sh -detached >/dev/null 2>/dev/null &
+            echo $! > $PIDFILE
+            success
+            echo ""
+        fi
+    ;;
+
+    stop)
+        if [ ! $ISRUNNING ]; then
+            echo -n "Nemo is already stopped"
+            failure
+            echo ""
+        else
+            echo "Stopping Nemo......"
+            PID=`cat $PIDFILE`
+            echo -n "$PID....."
+            echo $PID | xargs -n1 kill -9
+            rm -f $PIDFILE
+            echo -n "Stopped"
+            success
+            echo ""
+        fi
+    ;;
+
+    restart)
+        $0 stop
+        $0 start
+    ;;
+
+    status)
+        if [ $ISRUNNING ]; then
+            echo -n "Nemo is running: $(cat $PIDFILE)"
+            success
+            echo ""
+        else
+            echo -n "Nemo is not running"
+            failure
+            echo ""
+        fi
+    ;;
+esac
+exit 0
+
