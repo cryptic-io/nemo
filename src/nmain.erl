@@ -17,6 +17,8 @@
 start() -> spawn(?MODULE,init,[]).
 init() ->
 
+    ok = lager:start(),
+
     %Starts mnesia and sets up tables
 	ok = mnesia:start(),
     {atomic,ok} = ?TABLE(filekey),
@@ -37,5 +39,5 @@ init() ->
     nsupervisor:start(),
 
     %Hack to keep the supervisor alive
-    error_logger:info_msg("Nemo started\n"),
+    lager:notice("Nemo started"),
     timer:sleep(infinity).

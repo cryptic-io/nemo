@@ -11,7 +11,7 @@
 -define(LOOP_TIMEOUT,5000).
 
 start() ->
-    error_logger:info_msg("Getting initial list of files into mnesia\n"),
+    lager:notice("Getting initial list of files into mnesia"),
     ?MODULE:loop(),
     gen_server:start_link({local,nemo_nfilehunter},?MODULE,'_',[]).
 
