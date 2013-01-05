@@ -30,14 +30,9 @@ init() ->
     mnesia_recover:allow_garb(),
     mnesia_recover:start_garb(),
 
-    case ?SASL_ENABLED of
-    true -> application:start(sasl);
-    _ -> bummer
-    end,
-
 	%Local threads
     nsupervisor:start(),
 
     %Hack to keep the supervisor alive
-    lager:notice("Nemo started"),
+    error_logger:info_msg("Nemo started\n"),
     timer:sleep(infinity).

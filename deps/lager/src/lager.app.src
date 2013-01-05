@@ -16,7 +16,7 @@
             {handlers, [
                 {lager_console_backend, info},
                 {lager_file_backend, [
-                    {"log/nemo.log", notice, 104857600, "$D0", 5}
+                    {"log/nemo.log", info, 104857600, "$D0", 5}
                 ]}
             ]},
             %% Whether to write a crash log, and where. Undefined means no crash logger.
