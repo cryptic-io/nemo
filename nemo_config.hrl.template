@@ -1,0 +1,21 @@
+%Node list
+-define(NODE_LIST,[
+SYNTAX ERROR CHANGE THE NODE LIST NAO
+]).
+
+%Nemo's public port, where clients make requests and receive files
+-define(PUBLICPORT,8888).
+
+%Nemo's private port, where the api interacts
+-define(PRIVATEPORT,9000).
+
+%IPs with sudo privileges
+-define(SUDO_IPS, [
+    {127,0,0,1}
+]).
+
+%Document root
+-define(FILE_LOCATION,<<"/tmp/cc/">>).
+
+%Origin of requests for CORS
+-define(ORIGIN,"http://localhost").
