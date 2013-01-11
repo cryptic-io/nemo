@@ -14,7 +14,7 @@ ERL_PATH=`which erl`
 NODE_NAME='nemo@127.0.0.1'
 
 #Cookie string, must be the same across all nodes
-COOKIE='deadmau5 is extremely overrated'
+COOKIE='deadmau5_is_extremely_overrated'
 
 if [ "$1" == "-detached" ]; then
 DETACHED="-noshell"
