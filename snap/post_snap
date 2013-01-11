@@ -1,4 +1,7 @@
 #!/bin/sh
 
+#Source profile so we get CCETC_ROOT environment variable for make
+. /etc/profile
+
 make clean all
 sudo service nemo restart
