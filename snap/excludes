@@ -2,4 +2,4 @@ ebin
 erl_crash.dump
 log/*
 start.sh
-config.hrl
+support/tests/config.sh
