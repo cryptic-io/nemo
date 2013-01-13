@@ -32,7 +32,7 @@ add_to_nodedists(Node,Priority,{Start,End} = _Range) ->
 add_to_nodedist(Node,Priority,I) ->
     #nodedist{nodeprios=NodePrios} = ndb:get_nodedist(I),
     NewNodePrio  = #nodeprio{node=Node,priority=Priority},
-    NewNodePrios = insert_by_prio(NodePrios,NewNodePrio),
+    NewNodePrios = ?MODULE:insert_by_prio(NodePrios,NewNodePrio),
     ndb:set_nodedist(I,NewNodePrios).
 
 insert_by_prio([],NewNodePrio) -> [NewNodePrio];

@@ -30,6 +30,9 @@
 %Max time a filekey can be used before expiring, in seconds
 -define(FILEKEY_TTL, 60).
 
+%Amount of time to let a file record stick around before deleting it
+-define(FILE_TODELETE_TTL, 60*30).
+
 %Define number of children various processes have to distribute work amongst
 -define(NLISTEN_CHILDREN,30).
 -define(NDB_CHILDREN,30).

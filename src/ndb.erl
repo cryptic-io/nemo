@@ -22,6 +22,7 @@ delete_key(Key)              -> ?MODULE:call({deletekey,Key}).
 get_file_for_key(Key)        -> ?MODULE:call({getfileforkey,Key}).
 add_file(FileRec)            -> ?MODULE:call({addfile,FileRec}).
 add_file_unless(FileRec,Fun) -> ?MODULE:call({addfileunless,FileRec,Fun}).
+delete_file(FileName)        -> ?MODULE:call({deletefile,FileName}).
 file_exists(FileName)        -> ?MODULE:call({fileexists,FileName}).
 file_is_whole(FileName)      -> ?MODULE:call({fileiswhole,FileName}).
 reserve_file()               -> ?MODULE:call(reserve_file).
@@ -33,6 +34,12 @@ dump_nodedists()             -> ?MODULE:call(dump_nodedists).
 insert_partial(FileName) ->
     ?MODULE:add_file_unless(#file{filename=FileName,size=0,status=partial},
                                   fun() -> mnesia:read(file,FileName) /= []  end).
+
+try_add_file(FileRec) ->
+    ?MODULE:add_file_unless(FileRec, fun() -> case mnesia:read(file,FileRec#file.filename) of
+                                              [#file{status={todelete,_}}] -> true;
+                                              _ -> false
+                                              end end).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Carrying out calls
@@ -61,6 +68,15 @@ perform_call({addfileunless,FileRec,Fun}) ->
         case Fun() of
         true -> stopped;
         _    -> mnesia:write(FileRec)
+        end
+    end),
+    F;
+
+perform_call({deletefile,FileName}) ->
+    {atomic,F} = mnesia:transaction(fun() ->
+        case mnesia:read(file,FileName) of
+        [FileRec] -> mnesia:write(FileRec#file{status={todelete,nutil:timestamp()}});
+        [] -> ok
         end
     end),
     F;

@@ -8,7 +8,12 @@
                         nutil:timestamp() - R#filekey.ts =< ?FILEKEY_TTL
                     end},
     {file,          fun(R) ->
-                        nfile:exists(R#file.filename) or (R#file.status /= whole)
+                        nfile:exists(R#file.filename)
+                            andalso
+                        case R#file.status of
+                        {todelete,TS} -> nutil:timestamp() - TS =< ?FILE_TODELETE_TTL;
+                        _ -> true
+                        end
                     end}
 ]).
 

@@ -16,7 +16,7 @@ add_whole_file(FileName) ->
     case nfile:size(FileName) of
     {error,E} -> {error,E};
     Size      -> 
-        ndb:add_file(#file{filename=FileName,size=Size,status=whole}),
+        ndb:try_add_file(#file{filename=FileName,size=Size,status=whole}),
         success
     end.
 
