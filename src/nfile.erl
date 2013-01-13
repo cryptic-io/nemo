@@ -81,6 +81,12 @@ mkdir_p(<<A,B,_,_/binary>>) ->
     end;
 mkdir_p(_) -> {error,filename_is_bad_and_you_should_feel_bad}.
 
+delete(FileName) ->
+    case ?MODULE:full_path(FileName) of
+    {error,E} -> {error,E};
+    FullName  -> file:delete(FullName)
+    end.
+
 %Performs Fun on each file in under ?FILE_LOCATION, where the
 %param passed into fun is the name of the file (not full path)
 foreach_file(Fun) ->

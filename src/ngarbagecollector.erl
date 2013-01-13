@@ -8,12 +8,14 @@
                         nutil:timestamp() - R#filekey.ts =< ?FILEKEY_TTL
                     end},
     {file,          fun(R) ->
-                        nfile:exists(R#file.filename)
+                        SpareFile = nfile:exists(R#file.filename)
                             andalso
                         case R#file.status of
                         {todelete,TS} -> nutil:timestamp() - TS =< ?FILE_TODELETE_TTL;
                         _ -> true
-                        end
+                        end,
+                        if not SpareFile -> ok = nfile:delete(R#file.filename); true -> ok end,
+                        SpareFile
                     end}
 ]).
 
