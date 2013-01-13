@@ -7,6 +7,7 @@ command_dispatch(Command,Struct,S) ->
     case {S#conn_state.sudo,Command} of
     {true,<<"addFileKeys">>}     -> ?MODULE:command_addFileKeys(Struct,S);
     {true,<<"addFile">>}         -> ?MODULE:command_addFile(Struct,S);
+    {true,<<"removeFile">>}      -> ?MODULE:command_removeFile(Struct,S);
     {true,<<"reserveFile">>}     -> ?MODULE:command_reserveFile(Struct,S);
     {true,<<"reload">>}          -> ?MODULE:command_reload(Struct,S);
     {true,<<"applyNodeChange">>} -> ?MODULE:command_applyNodeChange(Struct,S);
@@ -58,6 +59,22 @@ command_addFile(Struct,S) ->
             case nfs:add_whole_file(FileName) of
             {error,E} -> {error,E};
             success   -> {success,<<"addFile">>}
+            end
+        end,
+    {S,Ret}.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+-define(REMOVEFILE_EXTRACT,[
+                            {<<"filename">>,{binary,required}}
+                        ]).
+command_removeFile(Struct,S) ->
+    Ret =
+        case nrpc:extract(Struct,?ADDFILE_EXTRACT) of
+        {error,Error,Extra} -> {error,Error,Extra};
+        [{_,FileName}] ->
+            case nfs:remove_file(FileName) of
+            {error,E} -> {error,E};
+            success   -> {success,<<"removeFile">>}
             end
         end,
     {S,Ret}.

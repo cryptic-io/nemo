@@ -20,6 +20,12 @@ add_whole_file(FileName) ->
         success
     end.
 
+remove_file(FileName) ->
+    case ndb:delete_file(FileName) of
+    {error,E} -> {error,E};
+    ok        -> success
+    end.
+
 %Returns if a file exists here (bool)
 exists_locally(FileName) ->
     ndb:file_exists(FileName).
