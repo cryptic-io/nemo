@@ -7,7 +7,7 @@ command_dispatch(Command,Struct,S) ->
     case {S#conn_state.sudo,Command} of
     {true,<<"addFileKeys">>}     -> ?MODULE:command_addFileKeys(Struct,S);
     {true,<<"addFile">>}         -> ?MODULE:command_addFile(Struct,S);
-    {true,<<"removeFile">>}      -> ?MODULE:command_removeFile(Struct,S);
+    {true,<<"removeFiles">>}     -> ?MODULE:command_removeFiles(Struct,S);
     {true,<<"reserveFile">>}     -> ?MODULE:command_reserveFile(Struct,S);
     {true,<<"reload">>}          -> ?MODULE:command_reload(Struct,S);
     {true,<<"applyNodeChange">>} -> ?MODULE:command_applyNodeChange(Struct,S);
@@ -64,18 +64,27 @@ command_addFile(Struct,S) ->
     {S,Ret}.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
--define(REMOVEFILE_EXTRACT,[
-                            {<<"filename">>,{binary,required}}
+-define(REMOVEFILES_EXTRACT,[
+                            {<<"filenames">>,{list,required}}
                         ]).
-command_removeFile(Struct,S) ->
+command_removeFiles(Struct,S) ->
     Ret =
-        case nrpc:extract(Struct,?ADDFILE_EXTRACT) of
+        case nrpc:extract(Struct,?REMOVEFILES_EXTRACT) of
         {error,Error,Extra} -> {error,Error,Extra};
-        [{_,FileName}] ->
-            case nfs:remove_file(FileName) of
-            {error,E} -> {error,E};
-            success   -> {success,<<"removeFile">>}
-            end
+        [{_,FileNames}] ->
+            RetList =
+                lists:map(fun(FileName) ->
+                    case is_binary(FileName) of
+                    false -> {struct,[{filename,FileName},{error,not_string}]};
+                    true  ->
+                        case nfs:remove_file(FileName) of
+                        {error,E} -> {struct,[{filename,FileName},{error,E}]};
+                        success   -> {struct,[{filename,FileName},{success,<<"removeFile">>}]}
+                        end
+                    end
+                end,
+                FileNames),
+            {return,RetList}
         end,
     {S,Ret}.
 
