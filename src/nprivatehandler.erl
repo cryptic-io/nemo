@@ -7,6 +7,7 @@ command_dispatch(Command,Struct,S) ->
     case {S#conn_state.sudo,Command} of
     {true,<<"addFileKeys">>}     -> ?MODULE:command_addFileKeys(Struct,S);
     {true,<<"addFile">>}         -> ?MODULE:command_addFile(Struct,S);
+    {true,<<"downloadFile">>}    -> ?MODULE:command_downloadFile(Struct,S);
     {true,<<"removeFiles">>}     -> ?MODULE:command_removeFiles(Struct,S);
     {true,<<"reserveFile">>}     -> ?MODULE:command_reserveFile(Struct,S);
     {true,<<"reload">>}          -> ?MODULE:command_reload(Struct,S);
@@ -64,6 +65,24 @@ command_addFile(Struct,S) ->
     {S,Ret}.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+-define(DOWNLOADFILE_EXTRACT,[
+                                {<<"filename">>,{binary,required}}
+                             ]).
+command_downloadFile(Struct,S) ->
+    Ret =
+        case nrpc:extract(Struct,?DOWNLOADFILE_EXTRACT) of
+        [{_,FileName}] ->
+            case nfile:size(FileName) of
+            {error,E} -> {error,E};
+            Size      -> {pipe,FileName,Size}
+            end;
+        {error,Error,Extra} -> {error,Error,Extra}
+        end,
+    {S,Ret}.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 -define(REMOVEFILES_EXTRACT,[
                             {<<"filenames">>,{list,required}}
                         ]).

@@ -91,8 +91,9 @@ open_r(FileName) ->
         end
     end.
 
-%Given the filename, retrieves it from some other node and stores it here. Assumes it's not
-%already here. Returns {error,E} or success
+%Given the filename, retrieves it from some other node and stores it here. If the file
+%already has an entry of any sort on this node don't download anything. Returns {error,E}
+%or success
 retrieve_file(FileName) ->
     case ndb:insert_partial(FileName) of
     stopped -> {error,file_exists};
