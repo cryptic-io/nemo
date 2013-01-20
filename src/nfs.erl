@@ -20,11 +20,12 @@ add_whole_file(FileName) ->
         success
     end.
 
+%Goes through all the nodes a file is found on and marks it to
+%be deleted
 remove_file(FileName) ->
-    case ndb:delete_file(FileName) of
-    {error,E} -> {error,E};
-    ok        -> success
-    end.
+    lists:foreach(
+        fun(Node) -> ok = rpc:call(Node,ndb,delete_file,[FileName]) end, 
+        ?MODULE:exists_on_which_nodes(FileName)).
 
 %Returns if a file exists here (bool)
 exists_locally(FileName) ->
@@ -63,7 +64,7 @@ where_else_is_whole(FileName) -> ?MODULE:where_is_whole(FileName,nutil:nnodes_sa
 %but if file isn't whole here returns random other node where it is. If not
 %whole anywhere, returns false
 node_where_is_whole(FileName) ->
-    case is_file_whole(FileName) of
+    case ?MODULE:is_file_whole(FileName) of
     true  -> node();
     false -> ?MODULE:other_node_where_is_whole(FileName)
     end.
