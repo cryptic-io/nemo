@@ -14,7 +14,7 @@
                         {todelete,TS} -> nutil:timestamp() - TS =< ?FILE_TODELETE_TTL;
                         _ -> true
                         end,
-                        if not SpareFile -> ok = nfile:delete(R#file.filename); true -> ok end,
+                        if not SpareFile -> nfile:delete(R#file.filename); true -> ok end,
                         SpareFile
                     end}
 ]).

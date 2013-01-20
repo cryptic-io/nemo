@@ -80,15 +80,14 @@ node_where_is_whole(FileName) ->
 other_node_where_is_whole(FileName) ->
     nutil:rand_from_list(?MODULE:where_else_is_whole(FileName)).
 
-%Returns an nfh from some node (based on node_where_is_whole) for the file, or {error,E}
-open_r(FileName) ->
+%Returns the size of the file, wherever it is. Tries to look on this node before anywhere else.
+%May return {error,E} if there's an error.
+size(FileName) ->
+    ThisNode = node(),
     case ?MODULE:node_where_is_whole(FileName) of
-    false -> {error,filedne};
-    Node  ->
-        case rpc:call(Node,nfh,open,[FileName,[read,binary]]) of
-        {error,E} -> {error,E};
-        {ok,Nfh}  -> Nfh
-        end
+    false    -> {error,file_dne};
+    ThisNode -> nfile:size(FileName);
+    Node     -> rpc:call(Node,nfile,size,[FileName])
     end.
 
 %Given the filename, retrieves it from some other node and stores it here. If the file
@@ -98,12 +97,17 @@ retrieve_file(FileName) ->
     case ndb:insert_partial(FileName) of
     stopped -> {error,file_exists};
     ok      ->
-        case ?MODULE:open_r(FileName) of
-        {error,E} -> {error,E};
-        Nfh ->
-            case nfile:pipe_nfh_to_file(Nfh,FileName) of
+        case {?MODULE:other_node_where_is_whole(FileName),?MODULE:size(FileName)} of
+        {false,_}     -> {error,file_dne};
+        {_,{error,E}} -> {error,E};
+        {Node,Size}   ->
+            case ndiplomat:file_on_sock(Node,FileName) of
             {error,E} -> {error,E};
-            ok -> ?MODULE:add_whole_file(FileName)
+            Sock ->
+                case nfile:pipe_sock_to_file(Sock,FileName,Size) of
+                {error,E} -> {error,pipe,E};
+                ok -> ?MODULE:add_whole_file(FileName)
+                end
             end
         end
     end.

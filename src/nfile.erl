@@ -9,6 +9,8 @@
 -include_lib("kernel/include/file.hrl").
 -compile(export_all).
 
+-define(CHUNK_SIZE,10240).
+
 pipe_file_to_sock(FileName,Sock) ->
     case ?MODULE:full_path(FileName) of
     {error,E} -> {error,E};
@@ -21,29 +23,28 @@ pipe_file_to_sock(FileName,Sock) ->
         end
     end.
 
-pipe_nfh_to_file(Nfh,FileName) ->
+pipe_sock_to_file(Sock,FileName,Size) ->
     case ?MODULE:full_path(FileName) of
     {error,E} -> {error,E};
     FullPath ->
-        case ?MODULE:mkdir_p(FileName) of
-        {error,E} -> {error,E};
-        ok ->
-            case file:open(FullPath,[write,binary]) of
-            {error,E} -> {error,E};
-            {ok,Fh}   -> ?MODULE:gen_pipe(Nfh,(fun nfh:read/2),Fh,(fun file:write/2))
-            end
+        case { ?MODULE:mkdir_p(FileName),
+               file:open(FullPath,[write,binary,raw]) } of
+        {{error,E},_} -> {error,E};
+        {_,{error,E}} -> {error,E};
+        {ok,{ok, FH}} -> ?MODULE:pipe_sock_to_file_loop(Sock,FH,Size)
         end
     end.
 
-gen_pipe(ReadFH,ReadFun,WriteFH,WriteFun) ->
-    case ReadFun(ReadFH,10240) of
-    {error,E} -> {error,E};
-    eof       -> ok;
+pipe_sock_to_file_loop(_Sock,_FH,Size) when (Size =< 0) -> ok;
+pipe_sock_to_file_loop(Sock,FH,Size) ->
+    ToPull = min(?CHUNK_SIZE,Size),
+    case gen_tcp:recv(Sock,ToPull,1000) of
     {ok,Data} ->
-        case WriteFun(WriteFH,Data) of
-        {error,E} -> {error,E};
-        ok        -> ?MODULE:gen_pipe(ReadFH,ReadFun,WriteFH,WriteFun)
-        end
+        case file:write(FH,Data) of
+        ok -> ?MODULE:pipe_sock_to_file_loop(Sock,FH,Size-ToPull);
+        {error,E} -> {error,E}
+        end;
+    {error,E} -> {error,E}
     end.
 
 size(FileName) ->

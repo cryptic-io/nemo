@@ -9,6 +9,9 @@ SYNTAX ERROR CHANGE THE NODE LIST NAO
 %Nemo's private port, where the api interacts
 -define(PRIVATEPORT,9000).
 
+%The hostname other nodes use to contact this one on its private interface
+-define(PRIVATEHOST,"localhost").
+
 %IPs with sudo privileges
 -define(SUDO_IPS, [
     {127,0,0,1}
