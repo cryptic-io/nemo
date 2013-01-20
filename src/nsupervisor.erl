@@ -18,10 +18,10 @@ init(_) ->
         {one_for_one, 100, 1000},
         [
             ?WORKER(ndb,[]),
+            ?WORKER(nnodemon,[]),
             ?WORKER(ngarbagecollector,[]),
             ?WORKER(nfilehunter,[]),
-            ?SUP(nlisten_sup,[]),
             ?WORKER(npinger,[]),
-            ?WORKER(nnodemon,[])
+            ?SUP(nlisten_sup,[])
         ]
     }}.
