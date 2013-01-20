@@ -45,6 +45,10 @@ terminate(_,_) -> oh_noooo.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+%add_whole_file will send out a broadcast to other nodes that we have
+%the file (if it's not up for deletion). So this serves as a way of
+%periodically sending out what we've got to other nodes, as well as
+%finding new files.
 loop() ->
     nfile:foreach_file(fun(Filename) -> 
         nfs:add_whole_file(Filename)

@@ -12,12 +12,18 @@
 
 -define(LOOP_TIMEOUT,60000).
 
+%Attempts to add a record for the file to the local file db. If successful it
+%will also use nnodemon to broadcast to other nodes that we have this file.
+%Returns success if successful, {error,deleted} if the file is up for deletion
+%(in which case it won't broadcast to other nodes), or {error,E}
 add_whole_file(FileName) ->
     case nfile:size(FileName) of
     {error,E} -> {error,E};
     Size      -> 
-        ndb:try_add_file(#file{filename=FileName,size=Size,status=whole}),
-        success
+        case ndb:try_add_file(#file{filename=FileName,size=Size,status=whole}) of
+        stopped -> {error,deleted};
+        ok      -> nnodemon:broadcast_consider(FileName), success
+        end
     end.
 
 %Goes through all the nodes a file is found on and marks it to

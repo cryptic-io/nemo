@@ -18,6 +18,9 @@ apply_priority_range(Node,NodeToApply,Priority,Range) ->
 remove_from_pool(Node,NodeToRemove) ->
     gen_server:cast({nemo_nnodemon,Node},{remove_from_pool,NodeToRemove}).
 
+consider(Node,FileName) ->
+    gen_server:cast({nemo_nnodemon,Node},{consider,FileName}).
+
 node_summary(Node) ->
     gen_server:call({nemo_nnodemon,Node},node_summary).
 
@@ -26,6 +29,9 @@ broadcast_apply(Node,Priority,Range) ->
 
 broadcast_remove(Node) ->
     gen_server:cast({nemo_nnodemon,node()},{broadcast_remove,Node}).
+
+broadcast_consider(FileName) ->
+    gen_server:cast({nemo_nnodemon,node()},{broadcast_consider,FileName}).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -60,6 +66,12 @@ handle_cast({remove_from_pool,N},S) ->
     ndistribute:remove_from_nodedists(N),
     {noreply,S,?LOOP_TIMEOUT};
 
+handle_cast({consider,FileName},S) ->
+    case ndistribute:file_belongs_here(FileName) of
+    true  -> nfs:retrieve_file(FileName); false -> do_nothing
+    end,
+    {noreply,S,?LOOP_TIMEOUT};
+
 handle_cast({broadcast_apply,N,P,R},S) ->
     lists:foreach(
         fun(Node) -> ?MODULE:apply_priority_range(Node,N,P,R) end,
@@ -68,11 +80,16 @@ handle_cast({broadcast_apply,N,P,R},S) ->
     ?MODULE:handle_cast({apply_priority_range,N,P,R},S);
 
 handle_cast({broadcast_remove,N},S) ->
-    lists:foreach(
-        fun(Node) -> ?MODULE:remove_from_pool(Node,N) end,
-        nutil:nnodes_sans_me()
+    ?MODULE:broadcast(
+        fun(Node) -> ?MODULE:remove_from_pool(Node,N) end
     ),
     ?MODULE:handle_cast({remove_from_pool,N},S);
+
+handle_cast({broadcast_consider,FileName},S) ->
+    ?MODULE:broadcast(
+        fun(Node) -> ?MODULE:consider(Node,FileName) end
+    ),
+    {noreply,S,?LOOP_TIMEOUT};
 
 handle_cast(Wut,S) ->
     error_logger:error_msg("nnodemon got cast ~w\n",[Wut]),
@@ -88,3 +105,8 @@ handle_info(Wut,S) ->
 code_change(_,State,_) ->
     {ok,State,?LOOP_TIMEOUT}.
 terminate(_,_) -> oh_noooo.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+broadcast(Fun) ->
+    lists:foreach( Fun, nutil:nnodes_sans_me() ).

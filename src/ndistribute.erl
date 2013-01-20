@@ -49,6 +49,9 @@ nodes_for_file(FileName) ->
     #nodedist{nodeprios=L} = ndb:get_nodedist(I),
     lists:map(fun(N) -> N#nodeprio.node end,L).
 
+file_belongs_here(FileName) ->
+    lists:member(node(),?MODULE:nodes_for_file(FileName)).
+
 nodedists_summary() ->
     Dump = ndb:dump_nodedists(),
     
