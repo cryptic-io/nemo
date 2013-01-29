@@ -106,7 +106,9 @@ retrieve_file(FileName) ->
             Sock ->
                 case nfile:pipe_sock_to_file(Sock,FileName,Size) of
                 {error,E} -> {error,pipe,E};
-                ok -> ?MODULE:add_whole_file(FileName)
+                ok ->
+                    gsock:close(Sock),
+                    ?MODULE:add_whole_file(FileName)
                 end
             end
         end
