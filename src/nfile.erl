@@ -24,6 +24,8 @@ pipe_file_to_sock(FileName,Sock) ->
     end.
 
 pipe_sock_to_file(Sock,FileName,Size) ->
+    ?MODULE:pipe_sock_to_file(Sock,FileName,Size,<<>>).
+pipe_sock_to_file(Sock,FileName,Size,Initial) ->
     case ?MODULE:full_path(FileName) of
     {error,E} -> {error,E};
     FullPath ->
@@ -31,7 +33,11 @@ pipe_sock_to_file(Sock,FileName,Size) ->
                file:open(FullPath,[write,binary,raw]) } of
         {{error,E},_} -> {error,E};
         {_,{error,E}} -> {error,E};
-        {ok,{ok, FH}} -> ?MODULE:pipe_sock_to_file_loop(Sock,FH,Size)
+        {ok,{ok, FH}} ->
+            case file:write(FH,Initial) of
+            ok -> ?MODULE:pipe_sock_to_file_loop(Sock,FH,Size-byte_size(Initial));
+            {error,E} -> {error,E}
+            end
         end
     end.
 

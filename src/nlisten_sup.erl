@@ -18,7 +18,8 @@ init(_) ->
         {one_for_one, 100, 1000},
         [
             ?WORKER(private_port,nlisten,[nconnection,?PRIVATEPORT,nprivatehandler]),
-            ?WORKER(public_port,nlisten,[nconnection,?PUBLICPORT,npublichandler])
+            ?WORKER(public_port,nlisten,[nconnection,?PUBLICPORT,npublichandler]),
+            ?WORKER(upload_port,nlisten,[nuploadhandler,?UPLOADPORT,'_'])
         ]
     }}.
 

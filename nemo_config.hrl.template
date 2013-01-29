@@ -9,6 +9,9 @@ SYNTAX ERROR CHANGE THE NODE LIST NAO
 %Nemo's private port, where the api interacts
 -define(PRIVATEPORT,9000).
 
+%Nemo's upload port, where file uploads go
+-define(UPLOADPORT,9001).
+
 %The hostname other nodes use to contact this one on its private interface
 -define(PRIVATEHOST,"localhost").
 
