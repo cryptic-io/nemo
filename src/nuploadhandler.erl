@@ -34,12 +34,12 @@ process_sock_loop(Sock) ->
             {FileName,Size,Leftover} = ?MODULE:get_name(Data),
 
             case ndb:insert_partial(FileName) of
-            stopped -> file_exists;
+            stopped -> error_logger:error_msg("File ~p exists already\n",[FileName]);
             ok ->
 
                 case nfile:pipe_sock_to_file(Sock,FileName,Size,Leftover) of
                 ok -> nfs:add_whole_file(FileName);
-                {error,E} -> error_logger:error_msg("Error piping file to file: ~p\n",[E])
+                {error,E} -> error_logger:error_msg("Error piping ~p to file: ~p\n",[FileName,E])
                 end
 
             end;

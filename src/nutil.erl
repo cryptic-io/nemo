@@ -101,6 +101,7 @@ rand_from_list(List) ->
 -define(RANDOM_CHARS,"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890").
 -define(RANDOM_CHARS_LEN,62).
 random_string(Length) ->
+    random:seed(now()),
     L =lists:foldl(fun(_, Acc) ->
                         [lists:nth(random:uniform(?RANDOM_CHARS_LEN), ?RANDOM_CHARS)]
                             ++ Acc

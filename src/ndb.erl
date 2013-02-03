@@ -21,7 +21,7 @@ add_key(FileName,Key)        -> ?MODULE:call({addkey,FileName,Key}).
 delete_key(Key)              -> ?MODULE:call({deletekey,Key}).
 get_file_for_key(Key)        -> ?MODULE:call({getfileforkey,Key}).
 add_file(FileRec)            -> ?MODULE:call({addfile,FileRec}).
-add_file_unless(FileRec,Fun) -> ?MODULE:call({addfileunless,FileRec,Fun}).
+add_file_if(FileRec,Fun)     -> ?MODULE:call({addfileif,FileRec,Fun}).
 delete_file(FileName)        -> ?MODULE:call({deletefile,FileName}).
 file_exists(FileName)        -> ?MODULE:call({fileexists,FileName}).
 file_is_whole(FileName)      -> ?MODULE:call({fileiswhole,FileName}).
@@ -32,14 +32,18 @@ remove_from_nodedists(Node)  -> ?MODULE:call({remove_from_nodedists,Node}).
 dump_nodedists()             -> ?MODULE:call(dump_nodedists).
 
 insert_partial(FileName) ->
-    ?MODULE:add_file_unless(#file{filename=FileName,size=0,status=partial},
-                                  fun() -> mnesia:read(file,FileName) /= []  end).
+    ?MODULE:add_file_if(#file{filename=FileName,size=0,status=partial},
+                        fun() -> case mnesia:read(file,FileName) of
+                                 [] -> true;
+                                 [#file{status=reserved}] -> true;
+                                 _ -> false
+                                 end end).
 
 try_add_file(FileRec) ->
-    ?MODULE:add_file_unless(FileRec, fun() -> case mnesia:read(file,FileRec#file.filename) of
-                                              [#file{status={todelete,_}}] -> true;
-                                              _ -> false
-                                              end end).
+    ?MODULE:add_file_if(FileRec, fun() -> case mnesia:read(file,FileRec#file.filename) of
+                                          [#file{status={todelete,_}}] -> false;
+                                          _ -> true 
+                                          end end).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Carrying out calls
@@ -63,11 +67,11 @@ perform_call({getfileforkey,Key}) ->
 perform_call({addfile,FileRec}) ->
    mnesia:dirty_write(FileRec);
 
-perform_call({addfileunless,FileRec,Fun}) ->
+perform_call({addfileif,FileRec,Fun}) ->
     {atomic,F} = mnesia:transaction(fun() ->
         case Fun() of
-        true -> stopped;
-        _    -> mnesia:write(FileRec)
+        false -> stopped;
+        _     -> mnesia:write(FileRec)
         end
     end),
     F;
