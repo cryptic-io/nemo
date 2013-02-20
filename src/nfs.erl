@@ -16,11 +16,11 @@
 %will also use nnodemon to broadcast to other nodes that we have this file.
 %Returns success if successful, {error,deleted} if the file is up for deletion
 %(in which case it won't broadcast to other nodes), or {error,E}
-add_whole_file(FileName) ->
+add_whole_file(FileName,Hash) ->
     case nfile:size(FileName) of
     {error,E} -> {error,E};
     Size      -> 
-        case ndb:try_add_file(#file{filename=FileName,size=Size,status=whole}) of
+        case ndb:try_add_file(#file{filename=FileName,size=Size,hash=Hash,status=whole}) of
         stopped -> {error,deleted};
         ok      -> nnodemon:broadcast_consider(FileName), success
         end
@@ -106,9 +106,9 @@ retrieve_file(FileName) ->
             Sock ->
                 case nfile:pipe_sock_to_file(Sock,FileName,Size) of
                 {error,E} -> {error,pipe,E};
-                ok ->
+                {ok,Hash} ->
                     gsock:close(Sock),
-                    ?MODULE:add_whole_file(FileName)
+                    ?MODULE:add_whole_file(FileName,Hash)
                 end
             end
         end

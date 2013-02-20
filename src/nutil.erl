@@ -107,3 +107,12 @@ random_string(Length) ->
                             ++ Acc
                 end, [], lists:seq(1, Length)),
     list_to_binary(L).
+
+hexstring(<<X:128/big-unsigned-integer>>) ->
+    list_to_binary(lists:flatten(io_lib:format("~32.16.0b", [X])));
+hexstring(<<X:160/big-unsigned-integer>>) ->
+    list_to_binary(lists:flatten(io_lib:format("~40.16.0b", [X])));
+hexstring(<<X:256/big-unsigned-integer>>) ->
+    list_to_binary(lists:flatten(io_lib:format("~64.16.0b", [X])));
+hexstring(<<X:512/big-unsigned-integer>>) ->
+    list_to_binary(lists:flatten(io_lib:format("~128.16.0b", [X]))).

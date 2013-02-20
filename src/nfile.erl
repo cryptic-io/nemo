@@ -35,19 +35,24 @@ pipe_sock_to_file(Sock,FileName,Size,Initial) ->
         {_,{error,E}} -> {error,E};
         {ok,{ok, FH}} ->
             case file:write(FH,Initial) of
-            ok -> ?MODULE:pipe_sock_to_file_loop(Sock,FH,Size-byte_size(Initial));
+            ok ->
+                Sha = crypto:sha_update(crypto:sha_init(),Initial),
+                ?MODULE:pipe_sock_to_file_loop(Sock,FH,Size-byte_size(Initial),Sha);
             {error,E} -> {error,E}
             end
         end
     end.
 
-pipe_sock_to_file_loop(_Sock,_FH,Size) when (Size =< 0) -> ok;
-pipe_sock_to_file_loop(Sock,FH,Size) ->
+pipe_sock_to_file_loop(_Sock,_FH,Size,Sha) when (Size =< 0) ->
+    {ok,nutil:hexstring(crypto:sha_final(Sha))};
+pipe_sock_to_file_loop(Sock,FH,Size,Sha) ->
     ToPull = min(?CHUNK_SIZE,Size),
     case gen_tcp:recv(Sock,ToPull,1000) of
     {ok,Data} ->
         case file:write(FH,Data) of
-        ok -> ?MODULE:pipe_sock_to_file_loop(Sock,FH,Size-ToPull);
+        ok ->
+            ShaUp = crypto:sha_update(Sha,Data),
+            ?MODULE:pipe_sock_to_file_loop(Sock,FH,Size-ToPull,ShaUp);
         {error,E} -> {error,E}
         end;
     {error,E} -> {error,E}
@@ -106,3 +111,21 @@ foreach_file(Fun) ->
             lists:foreach(fun(File) -> Fun(list_to_binary(File)) end,Files)
         end,Dirs2)
     end,Dirs).
+
+%Returns the hash of a file
+hash(FileName) ->
+    case ?MODULE:full_path(FileName) of
+    {error,E} -> {error,E};
+    FullName  ->
+        case file:open(FullName,[read,binary,raw]) of
+        {ok,FH} -> ?MODULE:hash_loop(FH,crypto:sha_init());
+        {error,E} -> {error,E}
+        end
+    end.
+hash_loop(FH,Sha) ->
+    case file:read(FH,?CHUNK_SIZE) of
+    {ok,Data} -> ?MODULE:hash_loop(FH,crypto:sha_update(Sha,Data));
+    eof -> nutil:hexstring(crypto:sha_final(Sha));
+    {error,E} -> {error,E}
+    end.
+

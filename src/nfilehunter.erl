@@ -16,6 +16,9 @@ start() ->
 %finding new files.
 loop(_) -> ?MODULE:loop().
 loop()  ->
-    nfile:foreach_file(fun(Filename) -> 
-        nfs:add_whole_file(Filename)
+    nfile:foreach_file(fun(FileName) -> 
+        case nfile:hash(FileName) of
+        {error,E} -> error_logger:error_msg("nfilehunter wasn't able to hash ~p, ~p",[FileName,E]);
+        Hash -> nfs:add_whole_file(FileName,Hash)
+        end
     end).

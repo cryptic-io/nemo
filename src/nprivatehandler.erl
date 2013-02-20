@@ -57,9 +57,13 @@ command_addFile(Struct,S) ->
         case nrpc:extract(Struct,?ADDFILE_EXTRACT) of
         {error,Error,Extra} -> {error,Error,Extra};
         [{_,FileName}] ->
-            case nfs:add_whole_file(FileName) of
+            case nfile:hash(FileName) of
             {error,E} -> {error,E};
-            success   -> {success,<<"addFile">>}
+            Hash ->
+                case nfs:add_whole_file(FileName,Hash) of
+                {error,E} -> {error,E};
+                success   -> {success,<<"addFile">>}
+                end
             end
         end,
     {S,Ret}.

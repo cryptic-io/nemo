@@ -31,14 +31,15 @@ process_sock_loop(Sock) ->
         {tcp_closed,_} -> exit;
         {tcp_error,_,etimedout} -> exit;
         {tcp,Sock,Data} ->
-            {FileName,Size,Leftover} = ?MODULE:get_name(Data),
+            {FileName,Size,Hash,Leftover} = ?MODULE:get_name(Data),
 
             case ndb:insert_partial(FileName) of
             stopped -> error_logger:error_msg("File ~p exists already\n",[FileName]);
             ok ->
 
                 case nfile:pipe_sock_to_file(Sock,FileName,Size,Leftover) of
-                ok -> nfs:add_whole_file(FileName);
+                {ok,Hash} -> nfs:add_whole_file(FileName,Hash);
+                {ok,OtherHash} -> error_logger:error_msg("Hash of ~p didn't match what it should, expected ~p but got ~p",[FileName,Hash,OtherHash]);
                 {error,E} -> error_logger:error_msg("Error piping ~p to file: ~p\n",[FileName,E])
                 end
 
@@ -53,6 +54,7 @@ process_sock_loop(Sock) ->
     end.
 
 get_name(Data) ->
-    [FileName,Rest] = binary:split(Data,<<10>>),
-    [SizeStr,Leftover] = binary:split(Rest,<<10>>),
-    {FileName,list_to_integer(binary_to_list(SizeStr)),Leftover}.
+    [FileName,Rest] = binary:split(Data, <<10>>),
+    [SizeStr,Rest2] = binary:split(Rest, <<10>>),
+    [Hash,Leftover] = binary:split(Rest2,<<10>>),
+    {FileName,list_to_integer(binary_to_list(SizeStr)),Hash,Leftover}.
