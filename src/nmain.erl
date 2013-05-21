@@ -25,11 +25,6 @@ init() ->
     {atomic,ok} = ?TABLE(file),
     {atomic,ok} = ?TABLE(nodedist),
 
-
-    %Hopefully force mnesia to actually pick up its garbage
-    mnesia_recover:allow_garb(),
-    mnesia_recover:start_garb(),
-
 	%Local threads
     nsupervisor:start(),
 
