@@ -1,6 +1,7 @@
 all: ebin/
-	(cd deps/periodically;$(MAKE) all)
-	(cd deps/lager;$(MAKE) all)
+	for dep in $(wildcard deps/*) ; do \
+	(cd $$dep;$(MAKE) all) ; \
+	done
 	(cd src;$(MAKE) all)
 
 edoc:
@@ -10,8 +11,9 @@ test:
 	(cd src;$(MAKE) test)
 
 clean:
-	(cd deps/periodically;$(MAKE) clean)
-	(cd deps/lager;$(MAKE) clean)
+	for dep in $(wildcard deps/*) ; do \
+	(cd $$dep;$(MAKE) clean) ; \
+	done
 	(cd src;$(MAKE) clean)
 
 clean_plt:
