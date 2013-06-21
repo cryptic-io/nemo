@@ -6,7 +6,7 @@
 ERL := erl
 ERLC := $(ERL)c
 
-INCLUDE_DIRS := ../include $(wildcard ../deps/*/include) $(CCETC_ROOT)/res/
+INCLUDE_DIRS := ../include $(wildcard ../deps/*/include) $(CCETC_ROOT)/res/projects/
 EBIN_DIRS := $(wildcard ../deps/*/ebin)
 ERLC_FLAGS := -W $(INCLUDE_DIRS:%=-I %) $(EBIN_DIRS:%=-pa %)
 
