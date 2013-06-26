@@ -5,15 +5,16 @@
 
 command_dispatch(Command,Struct,S) ->
     case {S#conn_state.sudo,Command} of
-    {true,<<"addFileKeys">>}     -> ?MODULE:command_addFileKeys(Struct,S);
-    {true,<<"addFile">>}         -> ?MODULE:command_addFile(Struct,S);
-    {true,<<"downloadFile">>}    -> ?MODULE:command_downloadFile(Struct,S);
-    {true,<<"removeFiles">>}     -> ?MODULE:command_removeFiles(Struct,S);
-    {true,<<"reserveFile">>}     -> ?MODULE:command_reserveFile(Struct,S);
-    {true,<<"reload">>}          -> ?MODULE:command_reload(Struct,S);
-    {true,<<"applyNodeChange">>} -> ?MODULE:command_applyNodeChange(Struct,S);
-    {true,<<"removeNode">>}      -> ?MODULE:command_removeNode(Struct,S);
-    {true,<<"topologySummary">>} -> ?MODULE:command_topologySummary(Struct,S);
+    {true,<<"addFileKeys">>}        -> ?MODULE:command_addFileKeys(Struct,S);
+    {true,<<"addFile">>}            -> ?MODULE:command_addFile(Struct,S);
+    {true,<<"downloadFile">>}       -> ?MODULE:command_downloadFile(Struct,S);
+    {true,<<"removeFiles">>}        -> ?MODULE:command_removeFiles(Struct,S);
+    {true,<<"delayedRemoveFiles">>} -> ?MODULE:command_delayedRemoveFiles(Struct,S);
+    {true,<<"reserveFile">>}        -> ?MODULE:command_reserveFile(Struct,S);
+    {true,<<"reload">>}             -> ?MODULE:command_reload(Struct,S);
+    {true,<<"applyNodeChange">>}    -> ?MODULE:command_applyNodeChange(Struct,S);
+    {true,<<"removeNode">>}         -> ?MODULE:command_removeNode(Struct,S);
+    {true,<<"topologySummary">>}    -> ?MODULE:command_topologySummary(Struct,S);
     _ ->                        {S, {error, unknown_command}}
     end.
 
@@ -108,6 +109,31 @@ command_removeFiles(Struct,S) ->
                 end,
                 FileNames),
             {return,RetList}
+        end,
+    {S,Ret}.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+-define(DELAYEDREMOVEFILES_EXTRACT,[
+                                    {<<"filenames">>,{list,required}},
+                                    {<<"delay">>,{int,required}}
+                                   ]).
+
+command_delayedRemoveFiles(Struct,S) ->
+    Ret =
+        case nrpc:extract(Struct,?DELAYEDREMOVEFILES_EXTRACT) of
+        {error,Error,Extra} -> {error,Error,Extra};
+        [{_,Delay},{_,FileNames}] ->
+            nutil:do_after(fun() ->
+                lists:foreach(fun(FileName) ->
+                    case is_binary(FileName) of
+                    false -> oh_well;
+                    true  -> nfs:remove_file(FileName)
+                    end
+                end,
+                FileNames)
+            end,Delay),
+            {success,ok}
         end,
     {S,Ret}.
 

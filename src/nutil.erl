@@ -116,3 +116,9 @@ hexstring(<<X:256/big-unsigned-integer>>) ->
     list_to_binary(lists:flatten(io_lib:format("~64.16.0b", [X])));
 hexstring(<<X:512/big-unsigned-integer>>) ->
     list_to_binary(lists:flatten(io_lib:format("~128.16.0b", [X]))).
+
+do_after(Fun,Delay) ->
+    spawn(fun() ->
+        timer:sleep(Delay),
+        Fun()
+    end).
