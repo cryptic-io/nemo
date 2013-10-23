@@ -1,6 +1,8 @@
 Nemo
 ======
 
+NOTE: This project has been abandoned in favor of [marlin][github.com/cryptic-io/marlin] combined with [generations][blog.mediocregopher.com/generations].
+
 What is it?
 -----------
 A file server which will (at some point) automatically load balance and replicate itself.
