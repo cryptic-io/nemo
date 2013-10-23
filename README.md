@@ -1,7 +1,7 @@
 Nemo
 ======
 
-NOTE: This project has been abandoned in favor of [marlin][github.com/cryptic-io/marlin] combined with [generations][blog.mediocregopher.com/generations].
+NOTE: This project has been abandoned in favor of [marlin](https://github.com/cryptic-io/marlin) combined with [generations](http://blog.mediocregopher.com/generations).
 
 What is it?
 -----------
